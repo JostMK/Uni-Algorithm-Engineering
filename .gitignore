@@ -1,2 +1,2 @@
-# CLion default build folder on windows
-cmake-build-debug
+# CLion build folder locations on windows
+cmake-build-*
