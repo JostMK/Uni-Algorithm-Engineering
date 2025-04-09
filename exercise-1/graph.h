@@ -9,10 +9,6 @@
 #include <vector>
 
 namespace exercise::one {
-    struct Node {
-        double lat, lng;
-    };
-
     struct Edge {
         int from;
         int to;
@@ -24,7 +20,6 @@ namespace exercise::one {
         explicit Graph(std::fstream input_file);
 
     private:
-        std::vector<Node> m_nodes;
         std::vector<Edge> m_edges;
         std::vector<int> m_edges_offsets;
     };

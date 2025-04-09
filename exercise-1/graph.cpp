@@ -20,29 +20,6 @@ namespace exercise::one {
         FINISHED
     };
 
-    struct FMINode {
-        int id;
-        //int osm_id;
-        double lng, lat;
-        //int height;
-    };
-
-    static FMINode parse_node(const std::string_view line) {
-        const auto index_end = line.find(' ');
-        const auto lng_start = line.find(' ', index_end + 1) + 1;
-        const auto lng_end = line.find(' ', lng_start);
-        const auto lat_start = lng_end + 1;
-        const auto lat_end = line.find(' ', lat_start);
-
-        int index;
-        double lat, lng;
-        std::from_chars(line.data(), line.data() + index_end, index);
-        std::from_chars(line.data() + lat_start, line.data() + lat_end, lat);
-        std::from_chars(line.data() + lng_start, line.data() + lng_end, lng);
-
-        return FMINode{index, lng, lat};
-    }
-
     static Edge parse_edge(const std::string_view line) {
         const auto from_end = line.find(' ');
         const auto to_start = from_end + 1;
@@ -58,9 +35,10 @@ namespace exercise::one {
         return Edge{from, to, weight};
     }
 
-    static void parse_file(std::fstream input_file, std::vector<FMINode> &fmi_nodes, std::vector<Edge> &edges) {
-        auto state = READ_STATE::META;
+    static int parse_file(std::fstream input_file, std::vector<Edge> &edges) {
+        int node_count = 0;
 
+        auto state = READ_STATE::META;
         int node_index = 0;
         int edge_index = 0;
 
@@ -68,15 +46,13 @@ namespace exercise::one {
         while (std::getline(input_file, line)) {
             switch (state) {
                 case READ_STATE::META:
-                    // ignore section
                     // metadata section ends with an empty line
                     if (line.empty()) {
                         state = READ_STATE::NODE_COUNT;
                     }
                     break;
                 case READ_STATE::NODE_COUNT: {
-                    const int node_count = std::stoi(line);
-                    fmi_nodes.resize(node_count);
+                    node_count = std::stoi(line);
                     state = READ_STATE::EDGE_COUNT;
                 }
                 break;
@@ -87,11 +63,9 @@ namespace exercise::one {
                 }
                 break;
                 case READ_STATE::NODES: {
-                    const auto fmi_node = parse_node(line);
-                    fmi_nodes[node_index] = fmi_node;
                     node_index++;
 
-                    if (node_index >= fmi_nodes.size()) {
+                    if (node_index >= node_count) {
                         state = READ_STATE::EDGES;
                     }
                 }
@@ -112,22 +86,17 @@ namespace exercise::one {
             }
         }
         input_file.close();
+
+        return node_count;
     }
 
     Graph::Graph(std::fstream input_file) {
         utils::Stopwatch sw;
         sw.Start();
-        std::vector<FMINode> fmi_nodes;
 
         std::cout << "PARSING FILE" << std::endl;
-        parse_file(std::move(input_file), fmi_nodes, m_edges);
+        const auto node_count = parse_file(std::move(input_file), m_edges);
         sw.Split();
-
-        std::cout << "SORTING NODES" << std::endl;
-        std::sort(fmi_nodes.begin(), fmi_nodes.end(),
-                  [](const auto &a, const auto &b) {
-                      return a.id < b.id;
-                  });
 
         std::cout << "SORTING EDGES" << std::endl;
         std::sort(m_edges.begin(), m_edges.end(),
@@ -137,13 +106,7 @@ namespace exercise::one {
         sw.Split();
 
         std::cout << "FINDING OFFSETS & ADDING EDGES" << std::endl;
-        m_nodes.resize(fmi_nodes.size());
-        for (int i = 0; i < fmi_nodes.size(); ++i) {
-            const auto &node = fmi_nodes[i];
-            m_nodes[i] = Node{node.lat, node.lng};
-        }
-
-        m_edges_offsets.resize(m_nodes.size() + 1);
+        m_edges_offsets.resize(node_count + 1);
         int last_from = -1;
         for (int i = 0; i < m_edges.size(); ++i) {
             if (const auto &edge = m_edges[i]; last_from != edge.from) {
@@ -153,8 +116,7 @@ namespace exercise::one {
                 last_from = edge.from;
             }
         }
-        m_edges_offsets[m_nodes.size()] = static_cast<int>(m_edges.size());
+        m_edges_offsets[node_count] = static_cast<int>(m_edges.size());
         sw.Stop();
-
     }
 } // exercise::one
