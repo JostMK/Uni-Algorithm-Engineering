@@ -8,6 +8,8 @@
 #include <charconv>
 #include <iostream>
 
+#include "Stopwatch.h"
+
 namespace exercise::one {
     enum READ_STATE {
         META,
@@ -113,10 +115,13 @@ namespace exercise::one {
     }
 
     Graph::Graph(std::fstream input_file) {
+        utils::Stopwatch sw;
+        sw.Start();
         std::vector<FMINode> fmi_nodes;
 
         std::cout << "PARSING FILE" << std::endl;
         parse_file(std::move(input_file), fmi_nodes, m_edges);
+        sw.Split();
 
         std::cout << "SORTING NODES" << std::endl;
         std::sort(fmi_nodes.begin(), fmi_nodes.end(),
@@ -129,6 +134,7 @@ namespace exercise::one {
                   [](const auto &a, const auto &b) {
                       return a.from < b.from;
                   });
+        sw.Split();
 
         std::cout << "FINDING OFFSETS & ADDING EDGES" << std::endl;
         m_nodes.resize(fmi_nodes.size());
@@ -138,7 +144,6 @@ namespace exercise::one {
         }
 
         m_edges_offsets.resize(m_nodes.size() + 1);
-
         int last_from = -1;
         for (int i = 0; i < m_edges.size(); ++i) {
             if (const auto &edge = m_edges[i]; last_from != edge.from) {
@@ -149,5 +154,7 @@ namespace exercise::one {
             }
         }
         m_edges_offsets[m_nodes.size()] = static_cast<int>(m_edges.size());
+        sw.Stop();
+
     }
 } // exercise::one

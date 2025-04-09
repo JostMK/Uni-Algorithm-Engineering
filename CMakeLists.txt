@@ -7,6 +7,7 @@ add_executable(Exercise-1-P2
         exercise-1/connectivity.cpp
         exercise-1/graph.cpp
         exercise-1/graph.h
+        exercise-1/Stopwatch.h
 )
 
 configure_file(exercise-1/graph.fmi graph.fmi COPYONLY)
