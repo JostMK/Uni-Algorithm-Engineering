@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <functional>
 #include <iostream>
 
 #include "Stopwatch.h"
@@ -20,7 +21,12 @@ namespace exercise::one {
         FINISHED
     };
 
-    static Edge parse_edge(const std::string_view line) {
+    struct FMIEdge {
+        int from, to;
+        int weight;
+    };
+
+    static FMIEdge parse_edge(const std::string_view line) {
         const auto from_end = line.find(' ');
         const auto to_start = from_end + 1;
         const auto to_end = line.find(' ', to_start);
@@ -32,10 +38,10 @@ namespace exercise::one {
         std::from_chars(line.data() + to_start, line.data() + to_end, to);
         std::from_chars(line.data() + weight_start, line.data() + weight_end, weight);
 
-        return Edge{from, to, weight};
+        return FMIEdge{from, to, weight};
     }
 
-    static int parse_file(std::fstream input_file, std::vector<Edge> &edges) {
+    static int parse_file(std::fstream input_file, std::vector<FMIEdge> &edges) {
         int node_count = 0;
 
         auto state = READ_STATE::META;
@@ -90,33 +96,56 @@ namespace exercise::one {
         return node_count;
     }
 
+    static void calculate_offset_array(const std::vector<FMIEdge> &edges, std::vector<int> &offsets,
+                                       const int node_count, const std::function<int(const FMIEdge &)> &selector) {
+        offsets.resize(node_count + 1);
+        int last_from = -1;
+        for (int i = 0; i < edges.size(); ++i) {
+            if (const auto from = selector(edges[i]); last_from != from) {
+                for (int j = from; j > last_from; --j) {
+                    offsets[j] = i;
+                }
+                last_from = from;
+            }
+        }
+        offsets[node_count] = static_cast<int>(edges.size());
+    }
+
     Graph::Graph(std::fstream input_file) {
         utils::Stopwatch sw;
         sw.Start();
 
-        std::cout << "PARSING FILE" << std::endl;
-        const auto node_count = parse_file(std::move(input_file), m_edges);
+        std::cout << "Parsing file.." << std::endl;
+        std::vector<FMIEdge> edges;
+        const auto node_count = parse_file(std::move(input_file), edges);
         sw.Split();
 
-        std::cout << "SORTING EDGES" << std::endl;
-        std::sort(m_edges.begin(), m_edges.end(),
+        std::cout << "Calculating out edges.." << std::endl;
+        std::sort(edges.begin(), edges.end(),
                   [](const auto &a, const auto &b) {
                       return a.from < b.from;
                   });
+        calculate_offset_array(edges, m_out_edges_offsets, node_count, [&](const auto &edge) { return edge.from; });
+
+        m_out_edges.resize(edges.size());
+        for (int i = 0; i < edges.size(); ++i) {
+            const auto [_, to, weight] = edges[i];
+            m_out_edges[i] = Edge{to, weight};
+        }
         sw.Split();
 
-        std::cout << "FINDING OFFSETS & ADDING EDGES" << std::endl;
-        m_edges_offsets.resize(node_count + 1);
-        int last_from = -1;
-        for (int i = 0; i < m_edges.size(); ++i) {
-            if (const auto &edge = m_edges[i]; last_from != edge.from) {
-                for (int j = edge.from; j > last_from; --j) {
-                    m_edges_offsets[j] = i;
-                }
-                last_from = edge.from;
-            }
+        std::cout << "Calculating in edges.." << std::endl;
+        std::sort(edges.begin(), edges.end(),
+                  [](const auto &a, const auto &b) {
+                      return a.to < b.to;
+                  });
+        calculate_offset_array(edges, m_in_edges_offsets, node_count, [&](const auto &edge) { return edge.to; });
+
+        m_in_edges.resize(edges.size());
+        for (int i = 0; i < edges.size(); ++i) {
+            const auto [from, _, weight] = edges[i];
+            m_in_edges[i] = Edge{from, weight};
         }
-        m_edges_offsets[node_count] = static_cast<int>(m_edges.size());
         sw.Stop();
     }
 } // exercise::one

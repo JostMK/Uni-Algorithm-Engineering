@@ -10,7 +10,6 @@
 
 namespace exercise::one {
     struct Edge {
-        int from;
         int to;
         int weight;
     };
@@ -20,8 +19,11 @@ namespace exercise::one {
         explicit Graph(std::fstream input_file);
 
     private:
-        std::vector<Edge> m_edges;
-        std::vector<int> m_edges_offsets;
+        std::vector<Edge> m_out_edges;
+        std::vector<int> m_out_edges_offsets;
+
+        std::vector<Edge> m_in_edges;
+        std::vector<int> m_in_edges_offsets;
     };
 } // exercise::one
 
