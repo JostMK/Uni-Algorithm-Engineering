@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "graph.h"
+#include "Stopwatch.h"
 
 namespace fs = std::filesystem;
 
@@ -26,9 +27,14 @@ int main(const int argc, char *argv[]) {
         return 1;
     }
 
-    std::cout << "Calculating the amount of weak connectivity components:" << std::endl;
     const auto graph = exercise::one::Graph(std::move(graph_file));
+
+    std::cout << "Calculating the amount of weak connectivity components:" << std::endl;
+    auto stopwatch = utils::Stopwatch();
+    stopwatch.Start();
     const auto weak_component_count = graph.compute_weakly_connected_components();
+    stopwatch.Stop();
+
     std::cout << "The graph has " << weak_component_count << " weakly connected components." << std::endl;
 
     return 0;

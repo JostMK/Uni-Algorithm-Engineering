@@ -157,10 +157,6 @@ namespace exercise::one {
 
         int component_index = 0;
         for (int i = 0; i < m_node_count; ++i) {
-            if (i % 5000 == 0) {
-                std::cout << "Progress: " << ((i + 1.0) / m_node_count * 100) << "%" << std::endl;
-            }
-
             if (node_components[i] != -1) {
                 continue;
             }
