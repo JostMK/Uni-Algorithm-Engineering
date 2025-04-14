@@ -8,6 +8,7 @@
 #include <charconv>
 #include <functional>
 #include <iostream>
+#include <stack>
 
 #include "Stopwatch.h"
 
@@ -160,39 +161,31 @@ namespace exercise::one {
                 std::cout << "Progress: " << ((i + 1.0) / m_node_count * 100) << "%" << std::endl;
             }
 
-            if (node_components[i] == -1) {
-                node_components[i] = component_index;
-                component_count++;
-                component_index++;
+            if (node_components[i] != -1) {
+                continue;
             }
 
-            int target_component = node_components[i];
-            const auto parse_edge = [&node_components, &target_component, &component_count, node_count = m_node_count
-                    ](const auto &edge) {
-                if (node_components[edge.to] == target_component) {
-                    return;
+            std::stack<int> stack;
+            stack.push(i);
+            while (!stack.empty()) {
+                const auto node = stack.top();
+                stack.pop();
+
+                if (node_components[node] != -1) {
+                    continue;
                 }
 
-                if (node_components[edge.to] == -1) {
-                    node_components[edge.to] = target_component;
-                    return;
-                }
+                node_components[node] = component_index;
 
-                const int merge_component = node_components[edge.to];
-                for (int k = 0; k < node_count; ++k) {
-                    if (node_components[k] == target_component) {
-                        node_components[k] = merge_component;
-                    }
+                for (int j = m_out_edges_offsets[node]; j < m_out_edges_offsets[node + 1]; ++j) {
+                    stack.push(m_out_edges[j].to);
                 }
-                component_count--;
-                target_component = merge_component;
-            };
-            for (int j = m_out_edges_offsets[i]; j < m_out_edges_offsets[i + 1]; ++j) {
-                parse_edge(m_out_edges[j]);
+                for (int j = m_in_edges_offsets[node]; j < m_in_edges_offsets[node + 1]; ++j) {
+                    stack.push(m_in_edges[j].to);
+                }
             }
-            for (int j = m_in_edges_offsets[i]; j < m_in_edges_offsets[i + 1]; ++j) {
-                parse_edge(m_in_edges[j]);
-            }
+            component_count++;
+            component_index++;
         }
 
         return component_count;
