@@ -155,17 +155,19 @@ namespace exercise::one {
         std::vector<int> node_components;
         node_components.resize(m_node_count, -1);
 
+        std::vector<int> stack;
+        stack.resize(m_node_count);
+        int stack_top = -1;
+
         int component_index = 0;
         for (int i = 0; i < m_node_count; ++i) {
             if (node_components[i] != -1) {
                 continue;
             }
 
-            std::stack<int> stack;
-            stack.push(i);
-            while (!stack.empty()) {
-                const auto node = stack.top();
-                stack.pop();
+            stack[++stack_top] = i;
+            while (stack_top >= 0) {
+                const auto node = stack[stack_top--];
 
                 if (node_components[node] != -1) {
                     continue;
@@ -174,10 +176,10 @@ namespace exercise::one {
                 node_components[node] = component_index;
 
                 for (int j = m_out_edges_offsets[node]; j < m_out_edges_offsets[node + 1]; ++j) {
-                    stack.push(m_out_edges[j].to);
+                    stack[++stack_top] = m_out_edges[j].to;
                 }
                 for (int j = m_in_edges_offsets[node]; j < m_in_edges_offsets[node + 1]; ++j) {
-                    stack.push(m_in_edges[j].to);
+                    stack[++stack_top] = m_in_edges[j].to;
                 }
             }
             component_count++;
