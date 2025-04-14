@@ -117,7 +117,7 @@ namespace exercise::one {
 
         std::cout << "Parsing file.." << std::endl;
         std::vector<FMIEdge> edges;
-        const auto node_count = parse_file(std::move(input_file), edges);
+        m_node_count = parse_file(std::move(input_file), edges);
         sw.Split();
 
         std::cout << "Calculating out edges.." << std::endl;
@@ -125,7 +125,7 @@ namespace exercise::one {
                   [](const auto &a, const auto &b) {
                       return a.from < b.from;
                   });
-        calculate_offset_array(edges, m_out_edges_offsets, node_count, [&](const auto &edge) { return edge.from; });
+        calculate_offset_array(edges, m_out_edges_offsets, m_node_count, [&](const auto &edge) { return edge.from; });
 
         m_out_edges.resize(edges.size());
         for (int i = 0; i < edges.size(); ++i) {
@@ -139,7 +139,7 @@ namespace exercise::one {
                   [](const auto &a, const auto &b) {
                       return a.to < b.to;
                   });
-        calculate_offset_array(edges, m_in_edges_offsets, node_count, [&](const auto &edge) { return edge.to; });
+        calculate_offset_array(edges, m_in_edges_offsets, m_node_count, [&](const auto &edge) { return edge.to; });
 
         m_in_edges.resize(edges.size());
         for (int i = 0; i < edges.size(); ++i) {
@@ -147,5 +147,54 @@ namespace exercise::one {
             m_in_edges[i] = Edge{from, weight};
         }
         sw.Stop();
+    }
+
+    int Graph::compute_weakly_connected_components() const {
+        int component_count = 0;
+        std::vector<int> node_components;
+        node_components.resize(m_node_count, -1);
+
+        int component_index = 0;
+        for (int i = 0; i < m_node_count; ++i) {
+            if (i % 5000 == 0) {
+                std::cout << "Progress: " << ((i + 1.0) / m_node_count * 100) << "%" << std::endl;
+            }
+
+            if (node_components[i] == -1) {
+                node_components[i] = component_index;
+                component_count++;
+                component_index++;
+            }
+
+            int target_component = node_components[i];
+            const auto parse_edge = [&node_components, &target_component, &component_count, node_count = m_node_count
+                    ](const auto &edge) {
+                if (node_components[edge.to] == target_component) {
+                    return;
+                }
+
+                if (node_components[edge.to] == -1) {
+                    node_components[edge.to] = target_component;
+                    return;
+                }
+
+                const int merge_component = node_components[edge.to];
+                for (int k = 0; k < node_count; ++k) {
+                    if (node_components[k] == target_component) {
+                        node_components[k] = merge_component;
+                    }
+                }
+                component_count--;
+                target_component = merge_component;
+            };
+            for (int j = m_out_edges_offsets[i]; j < m_out_edges_offsets[i + 1]; ++j) {
+                parse_edge(m_out_edges[j]);
+            }
+            for (int j = m_in_edges_offsets[i]; j < m_in_edges_offsets[i + 1]; ++j) {
+                parse_edge(m_in_edges[j]);
+            }
+        }
+
+        return component_count;
     }
 } // exercise::one

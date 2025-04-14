@@ -9,8 +9,7 @@ namespace fs = std::filesystem;
 const std::string default_graph_file_name = "graph.fmi";
 
 int main(const int argc, char *argv[]) {
-    std::cout << "Calculating the amount of weak connectivity components:" << std::endl;
-
+    std::cout << "Creating graph from file:" << std::endl;
     std::string graph_file_name = default_graph_file_name;
     if (argc > 1) {
         graph_file_name = argv[1];
@@ -27,7 +26,10 @@ int main(const int argc, char *argv[]) {
         return 1;
     }
 
-    auto graph = exercise::one::Graph(std::move(graph_file));
+    std::cout << "Calculating the amount of weak connectivity components:" << std::endl;
+    const auto graph = exercise::one::Graph(std::move(graph_file));
+    const auto weak_component_count = graph.compute_weakly_connected_components();
+    std::cout << "The graph has " << weak_component_count << " weakly connected components." << std::endl;
 
     return 0;
 }

@@ -18,7 +18,11 @@ namespace exercise::one {
     public:
         explicit Graph(std::fstream input_file);
 
+        [[nodiscard]] int compute_weakly_connected_components() const;
+
     private:
+        int m_node_count;
+
         std::vector<Edge> m_out_edges;
         std::vector<int> m_out_edges_offsets;
 
