@@ -8,7 +8,6 @@
 #include <charconv>
 #include <functional>
 #include <iostream>
-#include <stack>
 
 #include "Stopwatch.h"
 
@@ -116,12 +115,9 @@ namespace exercise::one {
         utils::Stopwatch sw;
         sw.Start();
 
-        std::cout << "Parsing file.." << std::endl;
         std::vector<FMIEdge> edges;
         m_node_count = parse_file(std::move(input_file), edges);
-        sw.Split();
 
-        std::cout << "Calculating out edges.." << std::endl;
         std::sort(edges.begin(), edges.end(),
                   [](const auto &a, const auto &b) {
                       return a.from < b.from;
@@ -133,9 +129,7 @@ namespace exercise::one {
             const auto [_, to, weight] = edges[i];
             m_out_edges[i] = Edge{to, weight};
         }
-        sw.Split();
 
-        std::cout << "Calculating in edges.." << std::endl;
         std::sort(edges.begin(), edges.end(),
                   [](const auto &a, const auto &b) {
                       return a.to < b.to;
@@ -147,10 +141,14 @@ namespace exercise::one {
             const auto [from, _, weight] = edges[i];
             m_in_edges[i] = Edge{from, weight};
         }
+
         sw.Stop();
     }
 
     int Graph::compute_weakly_connected_components() const {
+        utils::Stopwatch sw;
+        sw.Start();
+
         int component_count = 0;
         std::vector<int> node_components;
         node_components.resize(m_node_count, -1);
@@ -185,6 +183,8 @@ namespace exercise::one {
             component_count++;
             component_index++;
         }
+
+        sw.Stop();
 
         return component_count;
     }

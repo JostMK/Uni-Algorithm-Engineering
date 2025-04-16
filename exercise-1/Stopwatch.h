@@ -20,13 +20,13 @@ namespace utils {
         void Stop() {
             end = std::chrono::steady_clock::now();
             std::cout << "Measured " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() <<
-                    "[ms]" << std::endl;
+                    "ms" << std::endl;
         }
 
         void Split() {
             end = std::chrono::steady_clock::now();
             std::cout << "Measured " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() <<
-                    "[ms]" << std::endl;
+                    "ms" << std::endl;
             begin = std::chrono::steady_clock::now();
         }
 

@@ -3,14 +3,12 @@
 #include <fstream>
 
 #include "graph.h"
-#include "Stopwatch.h"
 
 namespace fs = std::filesystem;
 
 const std::string default_graph_file_name = "graph.fmi";
 
 int main(const int argc, char *argv[]) {
-    std::cout << "Creating graph from file:" << std::endl;
     std::string graph_file_name = default_graph_file_name;
     if (argc > 1) {
         graph_file_name = argv[1];
@@ -27,13 +25,13 @@ int main(const int argc, char *argv[]) {
         return 1;
     }
 
+    // problem 1
+    std::cout << "Creating graph from file: " << graph_file_name << std::endl;
     const auto graph = exercise::one::Graph(std::move(graph_file));
 
+    // problem 2
     std::cout << "Calculating the amount of weak connectivity components:" << std::endl;
-    auto stopwatch = utils::Stopwatch();
-    stopwatch.Start();
     const auto weak_component_count = graph.compute_weakly_connected_components();
-    stopwatch.Stop();
 
     std::cout << "The graph has " << weak_component_count << " weakly connected components." << std::endl;
 
