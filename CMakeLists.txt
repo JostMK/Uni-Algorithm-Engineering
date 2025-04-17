@@ -10,4 +10,7 @@ add_executable(Exercise-1-P2
         exercise-1/Stopwatch.h
 )
 
-configure_file(exercise-1/graph.fmi graph.fmi COPYONLY)
+add_custom_command(TARGET Exercise-1-P2 POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_SOURCE_DIR}/exercise-1/graph.fmi ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/graph.fmi
+        COMMENT "Copying graph file"
+)
