@@ -151,7 +151,7 @@ namespace exercise::one {
         node_components.resize(m_node_count, -1);
 
         std::vector<int> stack;
-        stack.resize(m_node_count);
+        stack.resize(m_out_edges.size() * 2);
         int stack_top = -1;
 
         int component_index = 0;
