@@ -6,34 +6,37 @@
 #define STOPWATCH_H
 
 #include <chrono>
-#include <iostream>
 
-namespace utils {
-    class Stopwatch {
-    public:
-        Stopwatch() = default;
+class Stopwatch {
+public:
+    static Stopwatch Start() {
+        Stopwatch stopwatch;
+        stopwatch.begin = std::chrono::steady_clock::now();
+        return stopwatch;
+    }
 
-        void Start() {
-            begin = std::chrono::steady_clock::now();
-        }
+    long long Split() {
+        end = std::chrono::steady_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+        begin = std::chrono::steady_clock::now();
+        return duration;
+    }
 
-        void Stop() {
-            end = std::chrono::steady_clock::now();
-            std::cout << "Measured " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() <<
-                    "ms" << std::endl;
-        }
+    long long Stop() {
+        end = std::chrono::steady_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    }
 
-        void Split() {
-            end = std::chrono::steady_clock::now();
-            std::cout << "Measured " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() <<
-                    "ms" << std::endl;
-            begin = std::chrono::steady_clock::now();
-        }
+    void Restart() {
+        begin = std::chrono::steady_clock::now();
+    }
 
-    private:
-        std::chrono::steady_clock::time_point begin;
-        std::chrono::steady_clock::time_point end;
-    };
-} // utils
+private:
+    Stopwatch() = default;
+
+    std::chrono::steady_clock::time_point begin{};
+    std::chrono::steady_clock::time_point end{};
+};
+
 
 #endif //STOPWATCH_H
