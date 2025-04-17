@@ -215,6 +215,10 @@ namespace exercise::one {
             }
         }
 
+        // no path exists return an invalid distance
+        if (distances[target] == std::numeric_limits<int>::max())
+            return -1;
+
         return distances[target];
     }
 
