@@ -14,3 +14,7 @@ add_custom_command(TARGET Exercise-1-P2 POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_SOURCE_DIR}/exercise-1/graph.fmi ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/graph.fmi
         COMMENT "Copying graph file"
 )
+add_custom_command(TARGET Exercise-1-P2 POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_SOURCE_DIR}/exercise-1/queries.txt ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/queries.txt
+        COMMENT "Copying queries file"
+)
