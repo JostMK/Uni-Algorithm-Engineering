@@ -20,6 +20,7 @@ namespace exercise::one {
 
         [[nodiscard]] int compute_weakly_connected_components() const;
         [[nodiscard]] int compute_shortest_path_dijkstra(int source, int target) const;
+        [[nodiscard]] int get_node_count() const;
 
     private:
         int m_node_count;

@@ -7,8 +7,9 @@
 #include <algorithm>
 #include <charconv>
 #include <functional>
-#include <string>
+#include <limits>
 #include <queue>
+#include <string>
 
 namespace exercise::one {
     enum READ_STATE {
@@ -175,12 +176,12 @@ namespace exercise::one {
         return component_count;
     }
 
-    struct SPNode {
-        int index;
-        int distance;
-    };
+    int Graph::compute_shortest_path_dijkstra(const int source, const int target) const {
+        struct SPNode {
+            int index;
+            int distance;
+        };
 
-    int Graph::compute_shortest_path_dijkstra(int source, int target) const {
         std::vector<int> distances;
         distances.resize(m_node_count, std::numeric_limits<int>::max());
 
@@ -192,23 +193,22 @@ namespace exercise::one {
         queue.push(SPNode{source, 0});
 
         while (!queue.empty()) {
-            const auto node = queue.top();
+            const auto [index, distance] = queue.top();
             queue.pop();
 
             // old invalid entry, not removed for performance
-            if (node.distance > distances[node.index]) {
+            if (distance > distances[index]) {
                 continue;
             }
 
             // target node expanded, shortest path found
-            if (node.index == target) {
+            if (index == target) {
                 break;
             }
 
-            for (int i = m_out_edges_offsets[node.index]; i < m_out_edges_offsets[node.index + 1]; ++i) {
+            for (int i = m_out_edges_offsets[index]; i < m_out_edges_offsets[index + 1]; ++i) {
                 const auto [neighbour_index, weight] = m_out_edges[i];
-                const auto new_distance = node.distance + weight;
-                if (new_distance < distances[neighbour_index]) {
+                if (const auto new_distance = distance + weight; new_distance < distances[neighbour_index]) {
                     distances[neighbour_index] = new_distance;
                     queue.push(SPNode{neighbour_index, new_distance});
                 }
@@ -216,5 +216,9 @@ namespace exercise::one {
         }
 
         return distances[target];
+    }
+
+    int Graph::get_node_count() const {
+        return m_node_count;
     }
 } // exercise::one
