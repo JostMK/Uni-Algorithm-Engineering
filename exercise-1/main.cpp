@@ -35,5 +35,10 @@ int main(const int argc, char *argv[]) {
 
     std::cout << "The graph has " << weak_component_count << " weakly connected components." << std::endl;
 
+    // problem 4
+    std::cout << "Calculating shortest path queries:" << std::endl;
+    const auto distance = graph.compute_shortest_path_dijkstra(0, 1);
+    std::cout << "Distance: " << distance << std::endl;
+
     return 0;
 }

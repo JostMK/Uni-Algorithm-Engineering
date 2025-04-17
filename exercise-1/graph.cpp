@@ -8,6 +8,7 @@
 #include <charconv>
 #include <functional>
 #include <string>
+#include <queue>
 
 #include "Stopwatch.h"
 
@@ -184,5 +185,48 @@ namespace exercise::one {
         sw.Stop();
 
         return component_count;
+    }
+
+    struct SPNode {
+        int index;
+        int distance;
+    };
+
+    int Graph::compute_shortest_path_dijkstra(int source, int target) const {
+        std::vector<int> distances;
+        distances.resize(m_node_count, std::numeric_limits<int>::max());
+
+        // creates a min priority queue ordered by distance
+        auto cmp = [](const SPNode &left, const SPNode &right) { return left.distance > right.distance; };
+        std::priority_queue<SPNode, std::vector<SPNode>, decltype(cmp)> queue(cmp);
+
+        distances[source] = 0;
+        queue.push(SPNode{source, 0});
+
+        while (!queue.empty()) {
+            const auto node = queue.top();
+            queue.pop();
+
+            // old invalid entry, not removed for performance
+            if (node.distance > distances[node.index]) {
+                continue;
+            }
+
+            // target node expanded, shortest path found
+            if (node.index == target) {
+                break;
+            }
+
+            for (int i = m_out_edges_offsets[node.index]; i < m_out_edges_offsets[node.index + 1]; ++i) {
+                const auto [neighbour_index, weight] = m_out_edges[i];
+                const auto new_distance = node.distance + weight;
+                if (new_distance < distances[neighbour_index]) {
+                    distances[neighbour_index] = new_distance;
+                    queue.push(SPNode{neighbour_index, new_distance});
+                }
+            }
+        }
+
+        return distances[target];
     }
 } // exercise::one

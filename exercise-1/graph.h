@@ -19,6 +19,7 @@ namespace exercise::one {
         explicit Graph(std::fstream input_file);
 
         [[nodiscard]] int compute_weakly_connected_components() const;
+        [[nodiscard]] int compute_shortest_path_dijkstra(int source, int target) const;
 
     private:
         int m_node_count;
