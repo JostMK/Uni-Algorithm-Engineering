@@ -10,8 +10,6 @@
 #include <string>
 #include <queue>
 
-#include "Stopwatch.h"
-
 namespace exercise::one {
     enum READ_STATE {
         META,
@@ -110,9 +108,6 @@ namespace exercise::one {
     }
 
     Graph::Graph(std::fstream input_file) {
-        utils::Stopwatch sw;
-        sw.Start();
-
         std::vector<FMIEdge> edges;
         m_node_count = parse_file(std::move(input_file), edges);
 
@@ -139,14 +134,9 @@ namespace exercise::one {
             const auto [from, _, weight] = edges[i];
             m_in_edges[i] = Edge{from, weight};
         }
-
-        sw.Stop();
     }
 
     int Graph::compute_weakly_connected_components() const {
-        utils::Stopwatch sw;
-        sw.Start();
-
         int component_count = 0;
         std::vector<int> node_components;
         node_components.resize(m_node_count, -1);
@@ -181,8 +171,6 @@ namespace exercise::one {
             component_count++;
             component_index++;
         }
-
-        sw.Stop();
 
         return component_count;
     }
