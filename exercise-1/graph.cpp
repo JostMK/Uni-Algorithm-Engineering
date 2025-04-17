@@ -57,38 +57,35 @@ namespace exercise::one {
                         state = READ_STATE::NODE_COUNT;
                     }
                     break;
-                case READ_STATE::NODE_COUNT: {
+
+                case READ_STATE::NODE_COUNT:
                     node_count = std::stoi(line);
                     state = READ_STATE::EDGE_COUNT;
-                }
-                break;
-                case READ_STATE::EDGE_COUNT: {
-                    const auto edge_count = std::stoi(line);
-                    edges.resize(edge_count);
-                    state = READ_STATE::NODES;
-                }
-                break;
-                case READ_STATE::NODES: {
-                    node_index++;
+                    break;
 
+                case READ_STATE::EDGE_COUNT:
+                    edges.resize(std::stoi(line));
+                    state = READ_STATE::NODES;
+                    break;
+
+                case READ_STATE::NODES:
+                    // skip parsing nodes
+                    node_index++;
                     if (node_index >= node_count) {
                         state = READ_STATE::EDGES;
                     }
-                }
-                break;
-                case READ_STATE::EDGES: {
-                    const auto fmi_edge = parse_edge(line);
-                    edges[edge_index] = fmi_edge;
-                    edge_index++;
+                    break;
 
+                case READ_STATE::EDGES:
+                    edges[edge_index] = parse_edge(line);
+                    edge_index++;
                     if (edge_index >= edges.size()) {
                         state = READ_STATE::FINISHED;
                     }
-                }
-                break;
-                case READ_STATE::FINISHED: {
-                }
-                break;
+                    break;
+
+                case READ_STATE::FINISHED:
+                    break;
             }
         }
         input_file.close();
