@@ -5,7 +5,7 @@
 #include <charconv>
 #include <string>
 #include <algorithm>
-#include <functional>
+#include <queue>
 #include "ch_graph.h"
 
 enum READ_STATE {
@@ -30,7 +30,7 @@ struct FMIEdge {
 
 static FMINode parse_node(const std::string_view line) {
     const auto id_end = line.find_first_of(' ');
-    const auto level_start = line.find_last_of(' ');
+    const auto level_start = line.find_last_of(' ') + 1;
 
     int id, level;
     std::from_chars(line.data(), line.data() + id_end, id);
@@ -49,7 +49,8 @@ static FMIEdge parse_edge(const std::string_view line) {
     //const auto edgeIdA_start = line.find_last_of(' ', edgeIdA_end - 1);
     //const auto edgeIdB_start = edgeIdA_end + 1;
 
-    int from, to, weight, edgeIdA, edgeIdB;
+    //int from, to, weight, edgeIdA, edgeIdB;
+    int from, to, weight;
     std::from_chars(line.data(), line.data() + from_end, from);
     std::from_chars(line.data() + to_start, line.data() + to_end, to);
     std::from_chars(line.data() + weight_start, line.data() + weight_end, weight);
@@ -113,8 +114,8 @@ static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std:
     return node_count;
 }
 
-static void calculate_offset_array_out_egdes(const std::vector<FMIEdge> &edges, std::vector<int> &offsets,
-                                   const int node_count) {
+static void calculate_offset_array_out_edges(const std::vector<FMIEdge> &edges, std::vector<int> &offsets,
+                                             const int node_count) {
     offsets.resize(node_count + 1);
     int last_from = -1;
     for (int i = 0; i < edges.size(); ++i) {
@@ -129,7 +130,7 @@ static void calculate_offset_array_out_egdes(const std::vector<FMIEdge> &edges, 
 }
 
 static void calculate_offset_array_in_edges(const std::vector<FMIEdge> &edges, std::vector<int> &offsets,
-                                   const int node_count) {
+                                            const int node_count) {
     offsets.resize(node_count + 1);
     int last_to = -1;
     for (int i = 0; i < edges.size(); ++i) {
@@ -154,7 +155,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
                   return a.from < b.from;
               });
     std::vector<int> original_edge_offsets;
-    calculate_offset_array_out_egdes(edges, original_edge_offsets, node_count);
+    calculate_offset_array_out_edges(edges, original_edge_offsets, node_count);
 
     // sorting nodes by level to improve cache locality
     std::sort(nodes.begin(), nodes.end(),
@@ -179,7 +180,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
                 const auto edge = edges[j];
                 // invalid replaced edge ids because they are not needed here
                 // TODO: maybe calculate correct replaced edge indices, after sorting edges
-                m_edges[edge_head++] = Edge{edge.to, edge.weight, -1, -1};
+                m_edges[edge_head++] = Edge{edge.to, edge.weight};
             }
         }
         m_edges_offsets[node_count] = edge_head;
@@ -196,7 +197,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
                 // invalid replaced edge ids because they are not needed here
                 // TODO: maybe calculate correct replaced edge indices, after sorting edges
                 if (nodes[edge.to].level > level) {
-                    m_up_edges.push_back(Edge{edge.to, edge.weight, -1, -1});
+                    m_up_edges.push_back(Edge{edge.to, edge.weight});
                     up_edge_head++;
                 }
 
@@ -224,7 +225,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
                 // invalid replaced edge ids because they are not needed here
                 // TODO: maybe calculate correct replaced edge indices, after sorting edges
                 if (nodes[edge.from].level > level) {
-                    m_down_edges.push_back(Edge{edge.from, edge.weight, -1, -1});
+                    m_down_edges.push_back(Edge{edge.from, edge.weight});
                     down_edge_head++;
                 }
 
@@ -232,4 +233,88 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
         }
         m_down_edges_offsets.push_back(down_edge_head);
     }
+}
+
+int exercise::two::CHGraph::compute_shortest_path(int source, int target) const {
+    struct SPNode {
+        int index;
+        int distance;
+        bool is_up_node;
+    };
+
+    source = m_node_index_map[source];
+    target = m_node_index_map[target];
+
+    int valid_min_distance = std::numeric_limits<int>::max();
+
+    std::vector<int> up_distances;
+    std::vector<int> down_distances;
+    up_distances.resize(m_node_index_map.size(), std::numeric_limits<int>::max());
+    down_distances.resize(m_node_index_map.size(), std::numeric_limits<int>::max());
+
+    // creates a min priority queue ordered by distance
+    auto cmp = [](const SPNode &left, const SPNode &right) { return left.distance > right.distance; };
+    std::priority_queue<SPNode, std::vector<SPNode>, decltype(cmp)> queue(cmp);
+
+    up_distances[source] = 0;
+    queue.push(SPNode{source, 0, true});
+    down_distances[target] = 0;
+    queue.push(SPNode{target, 0, false});
+
+    while (!queue.empty()) {
+        const auto [index, distance, is_up_node] = queue.top();
+        queue.pop();
+
+        if (is_up_node) {
+            // old invalid entry, not removed for performance
+            if (distance > up_distances[index]) {
+                continue;
+            }
+
+            // check if possible shortest is path found
+            if (down_distances[index] != std::numeric_limits<int>::max()) {
+                valid_min_distance = std::min(valid_min_distance, distance + down_distances[index]);
+            }
+        } else {
+            // old invalid entry, not removed for performance
+            if (distance > down_distances[index]) {
+                continue;
+            }
+
+            // check if possible shortest is path found
+            if (up_distances[index] != std::numeric_limits<int>::max()) {
+                valid_min_distance = std::min(valid_min_distance, distance + up_distances[index]);
+            }
+        }
+
+        // no more possible expansions shorter than shortest found valid path -> found the shortest path
+        if (distance > valid_min_distance) {
+            break;
+        }
+
+        if (is_up_node) {
+            for (int i = m_up_edges_offsets[index]; i < m_up_edges_offsets[index + 1]; ++i) {
+                const auto [neighbour_index, weight] = m_up_edges[i];
+                if (const auto new_distance = distance + weight; new_distance < up_distances[neighbour_index]) {
+                    up_distances[neighbour_index] = new_distance;
+                    queue.push(SPNode{neighbour_index, new_distance, true});
+                }
+            }
+        } else {
+            for (int i = m_down_edges_offsets[index]; i < m_down_edges_offsets[index + 1]; ++i) {
+                const auto [neighbour_index, weight] = m_down_edges[i];
+                if (const auto new_distance = distance + weight; new_distance < down_distances[neighbour_index]) {
+                    down_distances[neighbour_index] = new_distance;
+                    queue.push(SPNode{neighbour_index, new_distance, false});
+                }
+            }
+        }
+
+    }
+
+    // no path exists return an invalid distance
+    if (valid_min_distance == std::numeric_limits<int>::max())
+        return -1;
+
+    return valid_min_distance;
 }

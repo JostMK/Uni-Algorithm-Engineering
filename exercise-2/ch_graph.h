@@ -13,8 +13,6 @@ namespace exercise::two {
     struct Edge {
         int to;
         int weight;
-        int replacedA;
-        int replacedB;
     };
 
     class CHGraph {
