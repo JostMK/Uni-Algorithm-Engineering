@@ -21,4 +21,6 @@ add_custom_command(TARGET Exercise-1 POST_BUILD
 
 add_executable(Exercise-2
         exercise-2/main.cpp
+        exercise-2/ch_graph.cpp
+        exercise-2/ch_graph.h
 )
