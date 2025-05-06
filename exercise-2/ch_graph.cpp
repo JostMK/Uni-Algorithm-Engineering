@@ -134,7 +134,7 @@ static void calculate_offset_array_in_edges(const std::vector<FMIEdge> &edges, s
     offsets.resize(node_count + 1);
     int last_to = -1;
     for (int i = 0; i < edges.size(); ++i) {
-        if (const auto to = edges[i].from; last_to != to) {
+        if (const auto to = edges[i].to; last_to != to) {
             for (int j = to; j > last_to; --j) {
                 offsets[j] = i;
             }
@@ -178,9 +178,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
             auto original_id = nodes[i].id;
             for (int j = original_edge_offsets[original_id]; j < original_edge_offsets[original_id + 1]; j++) {
                 const auto edge = edges[j];
-                // invalid replaced edge ids because they are not needed here
-                // TODO: maybe calculate correct replaced edge indices, after sorting edges
-                m_edges[edge_head++] = Edge{edge.to, edge.weight};
+                m_edges[edge_head++] = Edge{m_node_index_map[edge.to], edge.weight};
             }
         }
         m_edges_offsets[node_count] = edge_head;
@@ -188,22 +186,23 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
 
     // create up graph
     {
+        m_up_edges.reserve(edges.size());
+        m_up_edges_offsets.resize(node_count + 1);
         int up_edge_head = 0;
-        for (auto &[original_id, level]: nodes) {
-            m_up_edges_offsets.push_back(up_edge_head);
+        for (int i = 0; i < nodes.size(); ++i) {
+            const auto [id, level] = nodes[i];
+            m_up_edges_offsets[i] = up_edge_head;
 
-            for (int j = original_edge_offsets[original_id]; j < original_edge_offsets[original_id + 1]; j++) {
-                auto edge = edges[j];
-                // invalid replaced edge ids because they are not needed here
-                // TODO: maybe calculate correct replaced edge indices, after sorting edges
-                if (nodes[edge.to].level > level) {
-                    m_up_edges.push_back(Edge{edge.to, edge.weight});
+            for (int j = original_edge_offsets[id]; j < original_edge_offsets[id + 1]; j++) {
+                const auto edge = edges[j];
+                const auto target = m_node_index_map[edge.to];
+                if (nodes[target].level > level) {
+                    m_up_edges.push_back(Edge{target, edge.weight});
                     up_edge_head++;
                 }
-
             }
         }
-        m_up_edges_offsets.push_back(up_edge_head);
+        m_up_edges_offsets[node_count] = up_edge_head;
     }
 
     // create down graph
@@ -216,22 +215,23 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
         std::vector<int> original_in_edge_offsets;
         calculate_offset_array_in_edges(edges, original_in_edge_offsets, node_count);
 
+        m_down_edges.reserve(edges.size());
+        m_down_edges_offsets.resize(node_count + 1);
         int down_edge_head = 0;
-        for (auto &[original_id, level]: nodes) {
-            m_down_edges_offsets.push_back(down_edge_head);
+        for (int i = 0; i < nodes.size(); ++i) {
+            const auto [id, level] = nodes[i];
+            m_down_edges_offsets[i] = down_edge_head;
 
-            for (int j = original_in_edge_offsets[original_id]; j < original_in_edge_offsets[original_id + 1]; j++) {
-                auto edge = edges[j];
-                // invalid replaced edge ids because they are not needed here
-                // TODO: maybe calculate correct replaced edge indices, after sorting edges
-                if (nodes[edge.from].level > level) {
-                    m_down_edges.push_back(Edge{edge.from, edge.weight});
+            for (int j = original_in_edge_offsets[id]; j < original_in_edge_offsets[id + 1]; j++) {
+                const auto edge = edges[j];
+                const auto source = m_node_index_map[edge.from];
+                if (nodes[source].level > level) {
+                    m_down_edges.push_back(Edge{source, edge.weight});
                     down_edge_head++;
                 }
-
             }
         }
-        m_down_edges_offsets.push_back(down_edge_head);
+        m_down_edges_offsets[node_count] = down_edge_head;
     }
 }
 
@@ -309,7 +309,6 @@ int exercise::two::CHGraph::compute_shortest_path(int source, int target) const 
                 }
             }
         }
-
     }
 
     // no path exists return an invalid distance
