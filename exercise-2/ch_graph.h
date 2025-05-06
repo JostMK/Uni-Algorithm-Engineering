@@ -24,9 +24,6 @@ namespace exercise::two {
     private:
         std::vector<int> m_node_index_map;
 
-        std::vector<Edge> m_edges;
-        std::vector<int> m_edges_offsets;
-
         std::vector<Edge> m_up_edges;
         std::vector<int> m_up_edges_offsets;
 

@@ -149,14 +149,6 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
     std::vector<FMIEdge> edges;
     const auto node_count = parse_file(std::move(input_file), nodes, edges);
 
-    // group edges by source
-    std::sort(edges.begin(), edges.end(),
-              [](const auto &a, const auto &b) {
-                  return a.from < b.from;
-              });
-    std::vector<int> original_edge_offsets;
-    calculate_offset_array_out_edges(edges, original_edge_offsets, node_count);
-
     // sorting nodes by level to improve cache locality
     std::sort(nodes.begin(), nodes.end(),
               [](const auto &a, const auto &b) {
@@ -167,25 +159,16 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
         m_node_index_map[nodes[i].id] = i;
     }
 
-    // create full graph
-    {
-        m_edges.resize(edges.size());
-        m_edges_offsets.resize(node_count + 1);
-        int edge_head = 0;
-        for (int i = 0; i < nodes.size(); ++i) {
-            m_edges_offsets[i] = edge_head;
-
-            auto original_id = nodes[i].id;
-            for (int j = original_edge_offsets[original_id]; j < original_edge_offsets[original_id + 1]; j++) {
-                const auto edge = edges[j];
-                m_edges[edge_head++] = Edge{m_node_index_map[edge.to], edge.weight};
-            }
-        }
-        m_edges_offsets[node_count] = edge_head;
-    }
-
     // create up graph
     {
+        // group edges by source
+        std::sort(edges.begin(), edges.end(),
+                  [](const auto &a, const auto &b) {
+                      return a.from < b.from;
+                  });
+        std::vector<int> original_edge_offsets;
+        calculate_offset_array_out_edges(edges, original_edge_offsets, node_count);
+
         m_up_edges.reserve(edges.size());
         m_up_edges_offsets.resize(node_count + 1);
         int up_edge_head = 0;
@@ -207,7 +190,7 @@ exercise::two::CHGraph::CHGraph(std::fstream input_file) {
 
     // create down graph
     {
-        // group edges by source
+        // group edges by target
         std::sort(edges.begin(), edges.end(),
                   [](const auto &a, const auto &b) {
                       return a.to < b.to;
