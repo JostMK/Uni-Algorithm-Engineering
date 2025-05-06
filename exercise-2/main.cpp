@@ -46,8 +46,10 @@ int main(const int argc, char *argv[]) {
                 754751
         };
         for (auto t: targets) {
+            sw.Restart();
             auto distance = graph.compute_shortest_path(377371, t);
-            std::cout << "Distance from 377371 to " << t << ": " << distance << std::endl;
+            std::cout << "Distance from 377371 to " << t << ": " << distance << " Calculated in " << sw.Stop() << "ms"
+                      << std::endl;
         }
     }
 
