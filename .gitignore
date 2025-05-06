@@ -1,2 +1,5 @@
 # CLion build folder locations on windows
 cmake-build-*
+
+# data folder containing big files
+data/
