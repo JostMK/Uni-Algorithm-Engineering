@@ -23,4 +23,6 @@ add_executable(Exercise-2
         exercise-2/main.cpp
         exercise-2/ch_graph.cpp
         exercise-2/ch_graph.h
+        exercise-2/parse_ch_graph_file.cpp
+        exercise-2/parse_ch_graph_file.h
 )
