@@ -8,6 +8,7 @@
 #include "ch_graph.h"
 
 #include "parse_ch_graph_file.h"
+#include "parse_fmi_graph_file.h"
 
 namespace exercise::two {
     CHGraph::CHGraph(std::fstream input_file, const bool is_ch_graph) {
@@ -212,6 +213,7 @@ namespace exercise::two {
     }
 
     void CHGraph::generate_ch_graph(std::fstream input_file) {
-        // TODO:
+        std::vector<FMINode> nodes;
+        const auto node_count = parse_fmi_file(std::move(input_file), nodes);
     }
 }
