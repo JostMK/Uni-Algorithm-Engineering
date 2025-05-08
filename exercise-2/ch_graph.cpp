@@ -300,3 +300,7 @@ int exercise::two::CHGraph::compute_shortest_path(int source, int target) const 
 
     return valid_min_distance;
 }
+
+int exercise::two::CHGraph::get_node_count() const {
+    return static_cast<int>(m_node_index_map.size());
+}

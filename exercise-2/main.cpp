@@ -4,10 +4,12 @@
 
 #include <iostream>
 #include <filesystem>
-#include "../exercise-1/Stopwatch.h"
+#include "Stopwatch.h"
 #include "ch_graph.h"
 
 namespace fs = std::filesystem;
+
+constexpr int CH_ITERATIONS = 1000;
 
 int main(const int argc, char *argv[]) {
     std::string ch_graph_file_name;
@@ -29,31 +31,22 @@ int main(const int argc, char *argv[]) {
 
         // problem 1
         std::cout << "Creating graph from file: '" << ch_graph_file_name << "'" << std::endl;
-        auto sw = Stopwatch::Start();
+        auto sw = Stopwatch<std::chrono::microseconds>::Start();
         const auto graph = exercise::two::CHGraph(std::move(graph_file));
-        std::cout << "Created in " << sw.Stop() << "ms\n" << std::endl;
+        std::cout << "Created in " << sw.Stop() / 1000 << "ms\n" << std::endl;
 
-        auto targets = std::vector<int>{
-                754742,
-                754743,
-                754744,
-                754745,
-                754746,
-                754747,
-                754748,
-                754749,
-                754750,
-                754751
-        };
-        for (auto t: targets) {
+        std::cout << "Calculating " << CH_ITERATIONS << " shortest path queries:" << std::endl;
+        long long overall_time = 0;
+        for (int i = 0; i < CH_ITERATIONS; ++i) {
+            const int start = std::rand() % graph.get_node_count();
+            const int end = std::rand() % graph.get_node_count();
+
             sw.Restart();
-            auto distance = graph.compute_shortest_path(377371, t);
-            std::cout << "Distance from 377371 to " << t << ": " << distance << " Calculated in " << sw.Stop() << "ms"
-                      << std::endl;
+            const auto dist = graph.compute_shortest_path(start, end);
+            overall_time += sw.Split();
         }
+        std::cout << "Computed in average of " << overall_time / CH_ITERATIONS << "us\n" << std::endl;
     }
 
-    //TODO: Test with direct neighbours: 304064 304063
-
-
+    return 0;
 }

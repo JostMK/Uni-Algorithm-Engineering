@@ -21,6 +21,8 @@ namespace exercise::two {
 
         [[nodiscard]] int compute_shortest_path(int source, int target) const;
 
+        [[nodiscard]] int get_node_count() const;
+
     private:
         std::vector<int> m_node_index_map;
 
