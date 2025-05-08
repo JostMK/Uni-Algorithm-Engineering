@@ -25,10 +25,9 @@ struct FMINode {
 struct FMIEdge {
     int from, to;
     int weight;
-    //int edgeIdA, edgeIdB;
 };
 
-static FMINode parse_node(const std::string_view line) {
+static FMINode parse_ch_node(const std::string_view line) {
     const auto id_end = line.find_first_of(' ');
     const auto level_start = line.find_last_of(' ') + 1;
 
@@ -39,31 +38,32 @@ static FMINode parse_node(const std::string_view line) {
     return FMINode{id, level};
 }
 
+static FMINode parse_node(const std::string_view line) {
+    const auto id_end = line.find_first_of(' ');
+
+    int id;
+    std::from_chars(line.data(), line.data() + id_end, id);
+
+    return FMINode{id, -1};
+}
+
 static FMIEdge parse_edge(const std::string_view line) {
     const auto from_end = line.find(' ');
     const auto to_start = from_end + 1;
     const auto to_end = line.find(' ', to_start);
     const auto weight_start = to_end + 1;
     const auto weight_end = line.find(' ', weight_start);
-    //const auto edgeIdA_end = line.find_last_of(' ');
-    //const auto edgeIdA_start = line.find_last_of(' ', edgeIdA_end - 1);
-    //const auto edgeIdB_start = edgeIdA_end + 1;
 
-    //int from, to, weight, edgeIdA, edgeIdB;
     int from, to, weight;
     std::from_chars(line.data(), line.data() + from_end, from);
     std::from_chars(line.data() + to_start, line.data() + to_end, to);
     std::from_chars(line.data() + weight_start, line.data() + weight_end, weight);
-    //std::from_chars(line.data() + edgeIdA_start, line.data() + edgeIdA_end, edgeIdA);
-    //std::from_chars(line.data() + edgeIdB_start, line.data() + line.length(), edgeIdB);
 
-    //return FMIEdge{from, to, weight, edgeIdA, edgeIdB};
     return FMIEdge{from, to, weight};
 }
 
-static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std::vector<FMIEdge> &edges) {
-    int node_count = 0;
-
+static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std::vector<FMIEdge> &edges,
+                      const bool is_ch_graph) {
     auto state = READ_STATE::META;
     int node_index = 0;
     int edge_index = 0;
@@ -79,8 +79,7 @@ static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std:
                 break;
 
             case READ_STATE::NODE_COUNT:
-                node_count = std::stoi(line);
-                nodes.resize(node_count);
+                nodes.resize(std::stoi(line));
                 state = READ_STATE::EDGE_COUNT;
                 break;
 
@@ -90,16 +89,18 @@ static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std:
                 break;
 
             case READ_STATE::NODES:
-                nodes[node_index] = parse_node(line);
-                node_index++;
-                if (node_index >= node_count) {
+                if (is_ch_graph) {
+                    nodes[node_index++] = parse_ch_node(line);
+                } else {
+                    nodes[node_index++] = parse_node(line);
+                }
+                if (node_index >= nodes.size()) {
                     state = READ_STATE::EDGES;
                 }
                 break;
 
             case READ_STATE::EDGES:
-                edges[edge_index] = parse_edge(line);
-                edge_index++;
+                edges[edge_index++] = parse_edge(line);
                 if (edge_index >= edges.size()) {
                     state = READ_STATE::FINISHED;
                 }
@@ -111,7 +112,7 @@ static int parse_file(std::fstream input_file, std::vector<FMINode> &nodes, std:
     }
     input_file.close();
 
-    return node_count;
+    return static_cast<int>(nodes.size());
 }
 
 static void calculate_offset_array_out_edges(const std::vector<FMIEdge> &edges, std::vector<int> &offsets,
@@ -144,77 +145,11 @@ static void calculate_offset_array_in_edges(const std::vector<FMIEdge> &edges, s
     offsets[node_count] = static_cast<int>(edges.size());
 }
 
-exercise::two::CHGraph::CHGraph(std::fstream input_file) {
-    std::vector<FMINode> nodes;
-    std::vector<FMIEdge> edges;
-    const auto node_count = parse_file(std::move(input_file), nodes, edges);
-
-    // sorting nodes by level to improve cache locality
-    std::sort(nodes.begin(), nodes.end(),
-              [](const auto &a, const auto &b) {
-                  return a.level < b.level;
-              });
-    m_node_index_map.resize(node_count);
-    for (int i = 0; i < nodes.size(); ++i) {
-        m_node_index_map[nodes[i].id] = i;
-    }
-
-    // create up graph
-    {
-        // group edges by source
-        std::sort(edges.begin(), edges.end(),
-                  [](const auto &a, const auto &b) {
-                      return a.from < b.from;
-                  });
-        std::vector<int> original_edge_offsets;
-        calculate_offset_array_out_edges(edges, original_edge_offsets, node_count);
-
-        m_up_edges.reserve(edges.size());
-        m_up_edges_offsets.resize(node_count + 1);
-        int up_edge_head = 0;
-        for (int i = 0; i < nodes.size(); ++i) {
-            const auto [id, level] = nodes[i];
-            m_up_edges_offsets[i] = up_edge_head;
-
-            for (int j = original_edge_offsets[id]; j < original_edge_offsets[id + 1]; j++) {
-                const auto edge = edges[j];
-                const auto target = m_node_index_map[edge.to];
-                if (nodes[target].level > level) {
-                    m_up_edges.push_back(Edge{target, edge.weight});
-                    up_edge_head++;
-                }
-            }
-        }
-        m_up_edges_offsets[node_count] = up_edge_head;
-    }
-
-    // create down graph
-    {
-        // group edges by target
-        std::sort(edges.begin(), edges.end(),
-                  [](const auto &a, const auto &b) {
-                      return a.to < b.to;
-                  });
-        std::vector<int> original_in_edge_offsets;
-        calculate_offset_array_in_edges(edges, original_in_edge_offsets, node_count);
-
-        m_down_edges.reserve(edges.size());
-        m_down_edges_offsets.resize(node_count + 1);
-        int down_edge_head = 0;
-        for (int i = 0; i < nodes.size(); ++i) {
-            const auto [id, level] = nodes[i];
-            m_down_edges_offsets[i] = down_edge_head;
-
-            for (int j = original_in_edge_offsets[id]; j < original_in_edge_offsets[id + 1]; j++) {
-                const auto edge = edges[j];
-                const auto source = m_node_index_map[edge.from];
-                if (nodes[source].level > level) {
-                    m_down_edges.push_back(Edge{source, edge.weight});
-                    down_edge_head++;
-                }
-            }
-        }
-        m_down_edges_offsets[node_count] = down_edge_head;
+exercise::two::CHGraph::CHGraph(std::fstream input_file, const bool is_ch_graph) {
+    if (is_ch_graph) {
+        read_in_ch_graph(std::move(input_file));
+    } else {
+        generate_ch_graph(std::move(input_file));
     }
 }
 
@@ -303,4 +238,82 @@ int exercise::two::CHGraph::compute_shortest_path(int source, int target) const 
 
 int exercise::two::CHGraph::get_node_count() const {
     return static_cast<int>(m_node_index_map.size());
+}
+
+void exercise::two::CHGraph::read_in_ch_graph(std::fstream input_file) {
+    std::vector<FMINode> nodes;
+    std::vector<FMIEdge> edges;
+    const auto node_count = parse_file(std::move(input_file), nodes, edges, true);
+
+    // sorting nodes descending by level to improve cache locality
+    std::sort(nodes.begin(), nodes.end(),
+              [](const auto &a, const auto &b) {
+                  return a.level > b.level;
+              });
+    m_node_index_map.resize(node_count);
+    for (int i = 0; i < nodes.size(); ++i) {
+        m_node_index_map[nodes[i].id] = i;
+    }
+
+    // create up graph
+    {
+        // group edges by source
+        std::sort(edges.begin(), edges.end(),
+                  [](const auto &a, const auto &b) {
+                      return a.from < b.from;
+                  });
+        std::vector<int> original_edge_offsets;
+        calculate_offset_array_out_edges(edges, original_edge_offsets, node_count);
+
+        m_up_edges.reserve(edges.size());
+        m_up_edges_offsets.resize(node_count + 1);
+        int up_edge_head = 0;
+        for (int i = 0; i < nodes.size(); ++i) {
+            const auto [id, level] = nodes[i];
+            m_up_edges_offsets[i] = up_edge_head;
+
+            for (int j = original_edge_offsets[id]; j < original_edge_offsets[id + 1]; j++) {
+                const auto edge = edges[j];
+                const auto target = m_node_index_map[edge.to];
+                if (nodes[target].level > level) {
+                    m_up_edges.push_back(Edge{target, edge.weight});
+                    up_edge_head++;
+                }
+            }
+        }
+        m_up_edges_offsets[node_count] = up_edge_head;
+    }
+
+    // create down graph
+    {
+        // group edges by target
+        std::sort(edges.begin(), edges.end(),
+                  [](const auto &a, const auto &b) {
+                      return a.to < b.to;
+                  });
+        std::vector<int> original_in_edge_offsets;
+        calculate_offset_array_in_edges(edges, original_in_edge_offsets, node_count);
+
+        m_down_edges.reserve(edges.size());
+        m_down_edges_offsets.resize(node_count + 1);
+        int down_edge_head = 0;
+        for (int i = 0; i < nodes.size(); ++i) {
+            const auto [id, level] = nodes[i];
+            m_down_edges_offsets[i] = down_edge_head;
+
+            for (int j = original_in_edge_offsets[id]; j < original_in_edge_offsets[id + 1]; j++) {
+                const auto edge = edges[j];
+                const auto source = m_node_index_map[edge.from];
+                if (nodes[source].level > level) {
+                    m_down_edges.push_back(Edge{source, edge.weight});
+                    down_edge_head++;
+                }
+            }
+        }
+        m_down_edges_offsets[node_count] = down_edge_head;
+    }
+}
+
+void exercise::two::CHGraph::generate_ch_graph(std::fstream input_file) {
+    // TODO:
 }

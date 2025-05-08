@@ -17,7 +17,7 @@ namespace exercise::two {
 
     class CHGraph {
     public:
-        explicit CHGraph(std::fstream input_file);
+        explicit CHGraph(std::fstream input_file, bool is_ch_graph);
 
         [[nodiscard]] int compute_shortest_path(int source, int target) const;
 
@@ -31,6 +31,9 @@ namespace exercise::two {
 
         std::vector<Edge> m_down_edges;
         std::vector<int> m_down_edges_offsets;
+
+        void read_in_ch_graph(std::fstream input_file);
+        void generate_ch_graph(std::fstream input_file);
     };
 } // exercise::one
 

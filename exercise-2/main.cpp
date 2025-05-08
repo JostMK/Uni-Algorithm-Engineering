@@ -32,7 +32,7 @@ int main(const int argc, char *argv[]) {
         // problem 1
         std::cout << "Creating graph from file: '" << ch_graph_file_name << "'" << std::endl;
         auto sw = Stopwatch<std::chrono::microseconds>::Start();
-        const auto graph = exercise::two::CHGraph(std::move(graph_file));
+        const auto graph = exercise::two::CHGraph(std::move(graph_file), true);
         std::cout << "Created in " << sw.Stop() / 1000 << "ms\n" << std::endl;
 
         std::cout << "Calculating " << CH_ITERATIONS << " shortest path queries:" << std::endl;
