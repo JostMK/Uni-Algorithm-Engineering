@@ -42,7 +42,7 @@ namespace exercise::two {
         return CHEdge{from, to, weight};
     }
 
-    static int parse_ch_file(std::fstream input_file, std::vector<CHNode> &nodes, std::vector<CHEdge> &edges) {
+    int parse_ch_file(std::fstream input_file, std::vector<CHNode> &nodes, std::vector<CHEdge> &edges) {
         auto state = READ_STATE::META;
         int node_index = 0;
         int edge_index = 0;

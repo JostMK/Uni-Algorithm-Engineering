@@ -19,7 +19,7 @@ namespace exercise::two {
         int weight;
     };
 
-    static int parse_ch_file(std::fstream input_file, std::vector<CHNode> &nodes, std::vector<CHEdge> &edges);
+    int parse_ch_file(std::fstream input_file, std::vector<CHNode> &nodes, std::vector<CHEdge> &edges);
 }
 
 #endif //PARSE_CH_GRAPH_FILE_H
