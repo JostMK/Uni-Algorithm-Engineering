@@ -7,8 +7,11 @@
 #include <queue>
 #include "ch_graph.h"
 
+#include <iostream>
+
 #include "parse_ch_graph_file.h"
 #include "parse_fmi_graph_file.h"
+#include "progressive_dijkstra.h"
 
 namespace exercise::two {
     CHGraph::CHGraph(std::fstream input_file, const bool is_ch_graph) {
@@ -212,8 +215,56 @@ namespace exercise::two {
         }
     }
 
+    static int contract_node(std::vector<CHBuildNode> &nodes,
+                             ProgressiveDijkstra &dijkstra,
+                             const int node_index,
+                             const int level) {
+        auto node = nodes[node_index];
+        int shortcuts_added = 0;
+        for (auto [in_node, in_edge]: node.in_edges) {
+            dijkstra.set_source(in_node);
+            std::list<FMIEdge> shortcuts;
+            for (auto [out_node, out_edge]: node.out_edges) {
+                if (in_node == out_node)
+                    continue;
+
+                // check if shortest-path from in_node to out_node goes over this node
+                const int distance = dijkstra.shortest_path_to(out_node);
+                const int direct_distance = in_edge.weight + out_edge.weight;
+                if (distance < direct_distance)
+                    continue;
+
+                // if yes then add shortcut
+                shortcuts.push_back(FMIEdge{in_node, out_node, distance});
+                shortcuts_added++;
+            }
+
+            // remove in_edge to contracted node
+            nodes[in_node].out_edges.erase(node_index);
+
+            // add shortcuts
+            for (auto [from, to, weight]: shortcuts) {
+                nodes[from].out_edges.emplace(to, CHBuildEdge{to, weight});
+                nodes[to].in_edges.emplace(from, CHBuildEdge{from, weight});
+            }
+        }
+        node.in_edges.clear();
+        node.level = level;
+
+        return shortcuts_added;
+    }
+
     void CHGraph::generate_ch_graph(std::fstream input_file) {
-        std::vector<FMINode> nodes;
+        std::vector<CHBuildNode> nodes;
         const auto node_count = parse_fmi_file(std::move(input_file), nodes);
+
+        ProgressiveDijkstra dijkstra{nodes};
+
+        int shortcuts_added = 0;
+        for (int i = 0; i < node_count; ++i) {
+            shortcuts_added += contract_node(nodes, dijkstra, i, i);
+        }
+
+        std::cout << shortcuts_added << " shortcuts added" << std::endl;
     }
 }

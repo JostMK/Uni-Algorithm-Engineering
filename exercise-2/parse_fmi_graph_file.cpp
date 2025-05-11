@@ -18,13 +18,13 @@ namespace exercise::two {
         FINISHED
     };
 
-    static FMINode parse_ch_node(const std::string_view line) {
+    static CHBuildNode parse_ch_node(const std::string_view line) {
         const auto id_end = line.find_first_of(' ');
 
         int id;
         std::from_chars(line.data(), line.data() + id_end, id);
 
-        return FMINode{id, {}};
+        return CHBuildNode{id, {}, {}};
     }
 
     static FMIEdge parse_edge(const std::string_view line) {
@@ -42,7 +42,7 @@ namespace exercise::two {
         return FMIEdge{from, to, weight};
     }
 
-    int parse_fmi_file(std::fstream input_file, std::vector<FMINode> &nodes) {
+    int parse_fmi_file(std::fstream input_file, std::vector<CHBuildNode> &nodes) {
         auto state = READ_STATE::META;
         int edge_count = 0;
 
@@ -84,8 +84,9 @@ namespace exercise::two {
                 }
 
                 case READ_STATE::EDGES: {
-                    auto edge = parse_edge(line);
-                    nodes[edge.from].edges.push_back(edge);
+                    auto [from, to, weight] = parse_edge(line);
+                    nodes[from].out_edges.emplace(to, CHBuildEdge{to, weight});
+                    nodes[to].in_edges.emplace(from, CHBuildEdge{from, weight});
                     edge_index++;
                     if (edge_index >= edge_count) {
                         state = READ_STATE::FINISHED;

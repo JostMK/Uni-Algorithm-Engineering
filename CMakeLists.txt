@@ -27,4 +27,11 @@ add_executable(Exercise-2
         exercise-2/parse_ch_graph_file.h
         exercise-2/parse_fmi_graph_file.cpp
         exercise-2/parse_fmi_graph_file.h
+        exercise-2/progressive_dijkstra.cpp
+        exercise-2/progressive_dijkstra.h
+)
+
+add_custom_command(TARGET Exercise-2 POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_SOURCE_DIR}/exercise-2/graph.fmi ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/graph.fmi
+        COMMENT "Copying graph file"
 )
