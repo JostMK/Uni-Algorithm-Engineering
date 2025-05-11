@@ -16,6 +16,10 @@ const std::string default_query_file_name = "queries.txt";
 const std::string default_result_file_name = "result.txt";
 
 int main(const int argc, char *argv[]) {
+    std::cout << "[INFO] Leider hab ich es nicht geschafft die CH preprocessing phase genuegend zu optimieren. "
+            << "Irgendwann hab ich gemerkt das ich wahrscheinlich komplett nochmal meine Wahl der Datenstruktur ueberdenken muesste, "
+            << "dafuer hatte ich aber leider keine Zeit mehr. .-. " << std::endl;
+
     // try read-in CH graph from command line path provided by '-ch' option
     std::string ch_graph_file_name;
     if (argc > 2) {

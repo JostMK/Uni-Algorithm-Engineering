@@ -2,14 +2,18 @@
 // Created by jostk on 05.05.2025.
 //
 
+#include "ch_graph.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <future>
 #include <iostream>
 #include <limits>
 #include <list>
 #include <queue>
+#include <thread>
+#include <unordered_set>
 
-#include "ch_graph.h"
 #include "parse_ch_graph_file.h"
 #include "parse_fmi_graph_file.h"
 #include "progressive_dijkstra.h"
@@ -221,10 +225,10 @@ namespace exercise::two {
         }
     }
 
-    static std::list<FMIEdge> contract_node(const std::vector<CHBuildNode> &nodes,
-                                            ProgressiveDijkstra &dijkstra,
-                                            const int node_index) {
-        std::list<FMIEdge> shortcuts;
+    static void contract_node(const std::vector<CHBuildNode> &nodes,
+                              ProgressiveDijkstra &dijkstra,
+                              const int node_index,
+                              std::list<FMIEdge> &shortcuts) {
         const auto &node = nodes[node_index];
 
         for (auto [in_node, in_edge]: node.in_edges) {
@@ -244,10 +248,51 @@ namespace exercise::two {
                 shortcuts.push_back(FMIEdge{in_node, out_node, distance});
             }
         }
-        return shortcuts;
     }
 
-    static int preprocess_graph(std::vector<CHBuildNode> &nodes, int node_count, int edge_count) {
+    static std::vector<int> find_independent_set(const std::vector<CHBuildNode> &nodes,
+                                                 const std::unordered_set<int> &uncontracted_nodes) {
+        std::unordered_set<int> independent_set;
+
+        for (const auto &node_id: uncontracted_nodes) {
+            //const auto node_id = static_cast<int>(rand() % uncontracted_nodes.size());
+            const auto &node = nodes[node_id];
+
+            bool independent = true;
+            for (auto [in_node, _]: node.in_edges) {
+                if (independent_set.find(in_node) != independent_set.end()) {
+                    independent = false;
+                    break;
+                }
+            }
+            if (!independent)
+                continue;
+
+            for (auto [out_node, _]: node.out_edges) {
+                if (independent_set.find(out_node) != independent_set.end()) {
+                    independent = false;
+                    break;
+                }
+            }
+
+            if (!independent)
+                continue;
+
+            independent_set.emplace(node_id);
+        }
+
+        return std::vector<int>{std::begin(independent_set), std::end(independent_set)};
+    }
+
+    static int preprocess_graph(std::vector<CHBuildNode> &nodes, const int node_count, const int edge_count) {
+        constexpr int PARALLEL_DIJKSTRAS = 16;
+
+        std::unordered_set<int> uncontracted_nodes{};
+        for (const auto &node: nodes) {
+            uncontracted_nodes.emplace(node.id);
+        }
+        auto independent_set_handle = std::async(std::launch::async, find_independent_set, nodes, uncontracted_nodes);
+
         // generate CH working graph
         std::vector<CHBuildNode> working_nodes;
         working_nodes.resize(nodes.size());
@@ -259,24 +304,42 @@ namespace exercise::two {
             working_nodes[id] = copy;
         }
 
-        ProgressiveDijkstra dijkstra{working_nodes};
+        int level = 0;
         int shortcuts_added = 0;
         int nodes_contracted = 0;
-        for (int i = 0; i < node_count; ++i) {
-            // find possible shortcuts
-            auto shortcuts = contract_node(working_nodes, dijkstra, i);
 
-            // delete node in working graph by deleting all in_edges and out_edges
-            for (auto [in_node, in_edge]: working_nodes[i].in_edges) {
-                working_nodes[in_node].out_edges.erase(i);
-            }
-            for (auto [out_node, out_edge]: working_nodes[i].out_edges) {
-                working_nodes[out_node].in_edges.erase(i);
+        while (shortcuts_added < edge_count) {
+            std::cout << "[Info] Finding independent set for level " << level << std::endl;
+            auto independent_set = independent_set_handle.get();
+
+            std::cout << "[Info] Contracting nodes of independent set with " << independent_set.size() <<
+                    " nodes for level " << level << " in parallel" << std::endl;
+            std::array<std::future<std::list<FMIEdge> >, PARALLEL_DIJKSTRAS> threads;
+            const int nodes_per_thread = std::ceil(independent_set.size() / threads.size());
+            for (int i = 0; i < threads.size(); ++i) {
+                threads[i] = std::async(std::launch::async, [independent_set, working_nodes, nodes_per_thread, i]() {
+                    ProgressiveDijkstra dijkstra{working_nodes};
+                    std::list<FMIEdge> shortcuts;
+                    const auto last_node = std::min(nodes_per_thread * (i + 1),
+                                                    static_cast<int>(independent_set.size()));
+                    for (int j = i * nodes_per_thread; j < last_node; ++j) {
+                        contract_node(working_nodes, dijkstra, i, shortcuts);
+                    }
+                    return shortcuts;
+                });
             }
 
-            // add shortcuts and level in main graph
-            nodes[i].level = i;
-            for (auto [from, to, weight]: shortcuts) {
+            // join threads
+            std::list<FMIEdge> shortcuts;
+            for (auto &thread: threads) {
+                auto result = thread.get();
+                shortcuts.insert(shortcuts.begin(), result.begin(), result.end());
+            }
+
+            // add shortcuts
+            std::cout << "[Info] Adding " << shortcuts.size() << " shortcuts for level " << level << std::endl;
+            for (auto &[from, to, weight]: shortcuts) {
+                // add shortcuts to graph
                 nodes[from].out_edges[to] = CHBuildEdge{to, weight};
                 nodes[to].in_edges[from] = CHBuildEdge{from, weight};
 
@@ -285,19 +348,36 @@ namespace exercise::two {
                 working_nodes[to].in_edges[from] = CHBuildEdge{from, weight};
             }
 
+            // prepare next independent set
+            for (const auto node: independent_set) {
+                uncontracted_nodes.erase(node);
+            }
+            independent_set_handle = std::async(std::launch::async, find_independent_set, nodes, uncontracted_nodes);
+
+            // delete node from working graph
+            for (const auto node: independent_set) {
+                // delete node in working graph by deleting all in_edges and out_edges
+                for (auto [in_node, in_edge]: working_nodes[node].in_edges) {
+                    working_nodes[in_node].out_edges.erase(node);
+                }
+                for (auto [out_node, out_edge]: working_nodes[node].out_edges) {
+                    working_nodes[out_node].in_edges.erase(node);
+                }
+                // assign level
+                nodes[node].level = level;
+            }
+
             shortcuts_added += static_cast<int>(shortcuts.size());
-            nodes_contracted++;
+            nodes_contracted += static_cast<int>(independent_set.size());
+            level++;
 
             if (shortcuts_added >= edge_count) {
                 break;
             }
 
-            if (i % 5000 == 1) {
-                const auto progress_percent = std::round((1000.0 * shortcuts_added / static_cast<double>(edge_count))) /
-                                              10;
-                std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
-                        std::endl;
-            }
+            const auto progress_percent = std::round((1000.0 * shortcuts_added) / edge_count) / 10;
+            std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
+                    std::endl;
         }
         std::cout << "[Progress: 100%] " << shortcuts_added << " shortcuts added" << std::endl;
         std::cout << "Contracted " << nodes_contracted << " out of " << node_count << " nodes" << std::endl;
@@ -312,9 +392,11 @@ namespace exercise::two {
         const auto node_count = static_cast<int>(nodes.size());
 
         // Preprocess graph to ch graph
+        std::cout << "[Info] Preprocessing graph for CH" << std::endl;
         edge_count = preprocess_graph(nodes, node_count, edge_count);
 
         // Create data structure for query
+        std::cout << "[Info] Generating query data structure" << std::endl;
         // sorting nodes descending by level to improve cache locality
         std::sort(nodes.begin(), nodes.end(),
                   [](const auto &a, const auto &b) {

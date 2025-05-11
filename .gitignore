@@ -1,5 +1,10 @@
 # CLion build folder locations on windows
-cmake-build-*
+cmake-build-*/
+
+# Visual Studio build folder
+out/
+# Visual Studio project setting folder
+.vs/
 
 # data folder containing big files
 data/
