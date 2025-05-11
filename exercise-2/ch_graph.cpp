@@ -30,6 +30,11 @@ namespace exercise::two {
             bool is_up_node;
         };
 
+        // invalid node index
+        if (source >= m_node_index_map.size() || target >= m_node_index_map.size()) {
+            return -1;
+        }
+
         source = m_node_index_map[source];
         target = m_node_index_map[target];
 
