@@ -241,11 +241,7 @@ namespace exercise::two {
         return shortcuts;
     }
 
-    void CHGraph::generate_ch_graph(std::fstream input_file) {
-        std::vector<CHBuildNode> nodes;
-        const auto edge_count = parse_fmi_file(std::move(input_file), nodes);
-        const auto node_count = nodes.size();
-
+    static int preprocess_graph(std::vector<CHBuildNode> &nodes, int node_count, int edge_count) {
         // generate CH working graph
         std::vector<CHBuildNode> working_nodes;
         working_nodes.resize(nodes.size());
@@ -286,19 +282,70 @@ namespace exercise::two {
 
 
             if (shortcuts_added >= edge_count) {
-                const auto progress_percent = std::round((1000.0 * i / static_cast<double>(node_count))) / 10;
-                std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
+                std::cout << "[Progress: 100%] " << shortcuts_added << " shortcuts added" <<
                         std::endl;
                 std::cout << "Contracted " << i << " out of " << node_count << " nodes" << std::endl;
                 break;
             }
 
             if (i % 5000 == 1) {
-                const auto progress_percent = std::round((1000.0 * i / static_cast<double>(node_count))) / 10;
+                const auto progress_percent = std::round((1000.0 * shortcuts_added / static_cast<double>(edge_count))) /
+                                              10;
                 std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
                         std::endl;
             }
         }
-        std::cout << "TODO: Create query data structure" << std::endl;
+
+        return edge_count + shortcuts_added;
+    }
+
+    void CHGraph::generate_ch_graph(std::fstream input_file) {
+        // Read-in fmi file
+        std::vector<CHBuildNode> nodes;
+        auto edge_count = parse_fmi_file(std::move(input_file), nodes);
+        const auto node_count = static_cast<int>(nodes.size());
+
+        // Preprocess graph to ch graph
+        edge_count = preprocess_graph(nodes, node_count, edge_count);
+
+        // Create data structure for query
+        // sorting nodes descending by level to improve cache locality
+        std::sort(nodes.begin(), nodes.end(),
+                  [](const auto &a, const auto &b) {
+                      return a.level > b.level;
+                  });
+        m_node_index_map.resize(node_count);
+        for (int i = 0; i < nodes.size(); ++i) {
+            m_node_index_map[nodes[i].id] = i;
+        }
+
+        m_up_edges.resize(edge_count);
+        m_down_edges.resize(edge_count);
+
+        m_up_edges_offsets.resize(node_count + 1);
+        m_down_edges_offsets.resize(node_count + 1);
+
+        int up_edge_head = 0;
+        int down_edge_head = 0;
+        for (const auto &[id, level, in_edges, out_edges]: nodes) {
+            const auto new_index = m_node_index_map[id];
+            m_up_edges_offsets[new_index] = up_edge_head;
+            m_down_edges_offsets[new_index] = down_edge_head;
+
+            for (const auto &[out_node, out_edge]: out_edges) {
+                const auto new_out_id = m_node_index_map[out_node];
+                if (nodes[new_out_id].level > level) {
+                    m_up_edges[up_edge_head++] = Edge{new_out_id, out_edge.weight};
+                }
+            }
+            for (const auto &[in_node, in_edge]: in_edges) {
+                const auto new_in_id = m_node_index_map[in_node];
+                if (nodes[new_in_id].level > level) {
+                    m_down_edges[down_edge_head++] = Edge{new_in_id, in_edge.weight};
+                }
+            }
+        }
+        m_up_edges_offsets[node_count] = edge_count;
+        m_down_edges_offsets[node_count] = edge_count;
     }
 }

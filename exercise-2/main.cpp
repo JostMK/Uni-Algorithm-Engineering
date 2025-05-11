@@ -74,5 +74,20 @@ int main(const int argc, char *argv[]) {
     const auto graph = exercise::two::CHGraph(std::move(graph_file), false);
     std::cout << "Created in " << sw.Stop() << "s\n" << std::endl;
 
+    // test 1 -> 2
+    {
+        constexpr int start = 377371, end = 754742, result = 436627;
+        const auto dist = graph.compute_shortest_path(start, end);
+        std::cout << "Distance from " << start << " to " << end << " is: " << dist << " [Correct: " << result << "]" <<
+                std::endl;
+    }
+    // test 4 -> 3
+    {
+        constexpr int start = 377377, end = 754742, result = 437280;
+        const auto dist = graph.compute_shortest_path(start, end);
+        std::cout << "Distance from " << start << " to " << end << " is: " << dist << " [Correct: " << result << "]" <<
+                std::endl;
+    }
+
     return 0;
 }
