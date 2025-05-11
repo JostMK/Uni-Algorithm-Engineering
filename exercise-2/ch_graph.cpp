@@ -261,6 +261,7 @@ namespace exercise::two {
 
         ProgressiveDijkstra dijkstra{working_nodes};
         int shortcuts_added = 0;
+        int nodes_contracted = 0;
         for (int i = 0; i < node_count; ++i) {
             // find possible shortcuts
             auto shortcuts = contract_node(working_nodes, dijkstra, i);
@@ -285,12 +286,9 @@ namespace exercise::two {
             }
 
             shortcuts_added += static_cast<int>(shortcuts.size());
-
+            nodes_contracted++;
 
             if (shortcuts_added >= edge_count) {
-                std::cout << "[Progress: 100%] " << shortcuts_added << " shortcuts added" <<
-                        std::endl;
-                std::cout << "Contracted " << i << " out of " << node_count << " nodes" << std::endl;
                 break;
             }
 
@@ -301,6 +299,8 @@ namespace exercise::two {
                         std::endl;
             }
         }
+        std::cout << "[Progress: 100%] " << shortcuts_added << " shortcuts added" << std::endl;
+        std::cout << "Contracted " << nodes_contracted << " out of " << node_count << " nodes" << std::endl;
 
         return edge_count + shortcuts_added;
     }
