@@ -10,7 +10,7 @@ main.o: main.cpp Stopwatch.h ch_graph.h
 	g++ $(compile_flags) -c main.cpp -o main.o
 
 ch_graph.o: ch_graph.cpp ch_graph.h parse_ch_graph_file.h parse_fmi_graph_file.h progressive_dijkstra.h
-	g++ $(compile_flags) -c graph.cpp -o graph.o
+	g++ $(compile_flags) -c ch_graph.cpp -o ch_graph.o
 
 progressive_dijkstra.o: progressive_dijkstra.cpp progressive_dijkstra.h
 	g++ $(compile_flags) -c progressive_dijkstra.cpp -o progressive_dijkstra.o
