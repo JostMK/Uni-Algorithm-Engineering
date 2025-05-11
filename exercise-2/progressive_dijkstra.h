@@ -5,6 +5,8 @@
 #ifndef PROGRESSIVE_DIJKSTRA_H
 #define PROGRESSIVE_DIJKSTRA_H
 
+#include <limits>
+#include <list>
 #include <queue>
 
 #include "parse_fmi_graph_file.h"
@@ -35,8 +37,8 @@ namespace exercise::two {
 
         const std::vector<CHBuildNode> &nodes;
 
-        std::vector<DijkstraDistance> m_distances;
-        std::list<int> m_dirty_distances;
+        std::vector<DijkstraDistance> m_distances{};
+        std::list<int> m_dirty_distances{};
 
         std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<> > m_queue;
         int m_source_node;

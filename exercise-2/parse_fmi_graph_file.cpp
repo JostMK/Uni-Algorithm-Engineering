@@ -6,8 +6,6 @@
 #include <string>
 #include "parse_fmi_graph_file.h"
 
-#include <algorithm>
-
 namespace exercise::two {
     enum READ_STATE {
         META,
