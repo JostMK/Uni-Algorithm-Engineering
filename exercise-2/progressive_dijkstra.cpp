@@ -18,7 +18,7 @@ namespace exercise::two {
             m_dirty_distances.pop_back();
         }
 
-        m_queue = std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<DijkstraNode> >{};
+        m_queue = std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<> >{};
         m_source_node = source_node;
 
         m_distances[m_source_node] = DijkstraDistance{0, true};

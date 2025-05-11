@@ -215,15 +215,15 @@ namespace exercise::two {
         }
     }
 
-    static int contract_node(std::vector<CHBuildNode> &nodes,
-                             ProgressiveDijkstra &dijkstra,
-                             const int node_index,
-                             const int level) {
-        auto node = nodes[node_index];
-        int shortcuts_added = 0;
+    static std::list<FMIEdge> contract_node(const std::vector<CHBuildNode> &nodes,
+                                            ProgressiveDijkstra &dijkstra,
+                                            const int node_index) {
+        std::list<FMIEdge> shortcuts;
+        const auto &node = nodes[node_index];
+
         for (auto [in_node, in_edge]: node.in_edges) {
             dijkstra.set_source(in_node);
-            std::list<FMIEdge> shortcuts;
+
             for (auto [out_node, out_edge]: node.out_edges) {
                 if (in_node == out_node)
                     continue;
@@ -236,35 +236,69 @@ namespace exercise::two {
 
                 // if yes then add shortcut
                 shortcuts.push_back(FMIEdge{in_node, out_node, distance});
-                shortcuts_added++;
-            }
-
-            // remove in_edge to contracted node
-            nodes[in_node].out_edges.erase(node_index);
-
-            // add shortcuts
-            for (auto [from, to, weight]: shortcuts) {
-                nodes[from].out_edges.emplace(to, CHBuildEdge{to, weight});
-                nodes[to].in_edges.emplace(from, CHBuildEdge{from, weight});
             }
         }
-        node.in_edges.clear();
-        node.level = level;
-
-        return shortcuts_added;
+        return shortcuts;
     }
 
     void CHGraph::generate_ch_graph(std::fstream input_file) {
         std::vector<CHBuildNode> nodes;
-        const auto node_count = parse_fmi_file(std::move(input_file), nodes);
+        const auto edge_count = parse_fmi_file(std::move(input_file), nodes);
+        const auto node_count = nodes.size();
 
-        ProgressiveDijkstra dijkstra{nodes};
+        // generate CH working graph
+        std::vector<CHBuildNode> working_nodes;
+        working_nodes.resize(nodes.size());
+        for (auto &[id, level, in_edges, out_edges]: nodes) {
+            auto copy = CHBuildNode{id, level};
+            copy.in_edges.insert(in_edges.begin(), in_edges.end());
+            copy.out_edges.insert(out_edges.begin(), out_edges.end());
 
-        int shortcuts_added = 0;
-        for (int i = 0; i < node_count; ++i) {
-            shortcuts_added += contract_node(nodes, dijkstra, i, i);
+            working_nodes[id] = copy;
         }
 
-        std::cout << shortcuts_added << " shortcuts added" << std::endl;
+        ProgressiveDijkstra dijkstra{working_nodes};
+        int shortcuts_added = 0;
+        for (int i = 0; i < node_count; ++i) {
+            // find possible shortcuts
+            auto shortcuts = contract_node(working_nodes, dijkstra, i);
+
+            // delete node in working graph by deleting all in_edges and out_edges
+            for (auto [in_node, in_edge]: working_nodes[i].in_edges) {
+                working_nodes[in_node].out_edges.erase(i);
+            }
+            for (auto [out_node, out_edge]: working_nodes[i].out_edges) {
+                working_nodes[out_node].in_edges.erase(i);
+            }
+
+            // add shortcuts and level in main graph
+            nodes[i].level = i;
+            for (auto [from, to, weight]: shortcuts) {
+                nodes[from].out_edges[to] = CHBuildEdge{to, weight};
+                nodes[to].in_edges[from] = CHBuildEdge{from, weight};
+
+                // and also to work graph
+                working_nodes[from].out_edges[to] = CHBuildEdge{to, weight};
+                working_nodes[to].in_edges[from] = CHBuildEdge{from, weight};
+            }
+
+            shortcuts_added += static_cast<int>(shortcuts.size());
+
+
+            if (shortcuts_added >= edge_count) {
+                const auto progress_percent = std::round((1000.0 * i / static_cast<double>(node_count))) / 10;
+                std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
+                        std::endl;
+                std::cout << "Contracted " << i << " out of " << node_count << " nodes" << std::endl;
+                break;
+            }
+
+            if (i % 5000 == 1) {
+                const auto progress_percent = std::round((1000.0 * i / static_cast<double>(node_count))) / 10;
+                std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
+                        std::endl;
+            }
+        }
+        std::cout << "TODO: Create query data structure" << std::endl;
     }
 }

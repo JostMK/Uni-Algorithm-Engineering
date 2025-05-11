@@ -101,6 +101,6 @@ namespace exercise::two {
         }
         input_file.close();
 
-        return static_cast<int>(nodes.size());
+        return edge_count;
     }
 }

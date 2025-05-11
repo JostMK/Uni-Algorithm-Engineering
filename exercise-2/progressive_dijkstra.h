@@ -38,7 +38,7 @@ namespace exercise::two {
         std::vector<DijkstraDistance> m_distances;
         std::list<int> m_dirty_distances;
 
-        std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<DijkstraNode> > m_queue;
+        std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<> > m_queue;
         int m_source_node;
 
         const DijkstraDistance clear_distance = DijkstraDistance{std::numeric_limits<int>::max(), false};

@@ -70,9 +70,9 @@ int main(const int argc, char *argv[]) {
     }
 
     std::cout << "Creating graph from file: '" << graph_file_name << "'" << std::endl;
-    auto sw = Stopwatch<std::chrono::microseconds>::Start();
+    auto sw = Stopwatch<std::chrono::seconds>::Start();
     const auto graph = exercise::two::CHGraph(std::move(graph_file), false);
-    std::cout << "Created in " << sw.Stop() << "ms\n" << std::endl;
+    std::cout << "Created in " << sw.Stop() << "s\n" << std::endl;
 
     return 0;
 }
