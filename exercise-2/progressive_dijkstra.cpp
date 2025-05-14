@@ -48,13 +48,13 @@ namespace exercise::two {
                 break;
             }
 
-            for (auto [key, edge]: nodes[index].out_edges) {
-                if (const auto new_distance = distance + edge.weight;
-                    new_distance < m_distances[edge.neighbour].value) {
-                    m_distances[edge.neighbour].value = new_distance;
-                    m_dirty_distances.emplace_back(edge.neighbour);
+            for (auto [neighbour, weight]: nodes[index].out_edges) {
+                if (const auto new_distance = distance + weight;
+                    new_distance < m_distances[neighbour].value) {
+                    m_distances[neighbour].value = new_distance;
+                    m_dirty_distances.emplace_back(neighbour);
 
-                    m_queue.push(DijkstraNode{edge.neighbour, new_distance});
+                    m_queue.push(DijkstraNode{neighbour, new_distance});
                 }
             }
         }

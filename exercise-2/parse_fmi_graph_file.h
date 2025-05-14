@@ -16,15 +16,43 @@ namespace exercise::two {
     };
 
     struct CHBuildEdge {
-        int neighbour;
-        int weight;
+        int neighbour{};
+        int weight{};
+
+        CHBuildEdge() = default;
+
+        CHBuildEdge(const int neighbour, const int weight) : neighbour(neighbour), weight(weight) {
+        }
     };
 
     struct CHBuildNode {
-        int id;
-        int level;
-        std::unordered_map<int, CHBuildEdge> in_edges;
-        std::unordered_map<int, CHBuildEdge> out_edges;
+        int id{};
+        int level{};
+        std::list<CHBuildEdge> in_edges;
+        std::list<CHBuildEdge> out_edges;
+
+        CHBuildNode() = default;
+
+        CHBuildNode(const int id, const int level) : id(id), level(level) {
+        }
+
+        void remove_in_edge(const int neighbour) {
+            for (auto it = in_edges.begin(); it != in_edges.end(); ++it) {
+                if (it->neighbour == neighbour) {
+                    in_edges.erase(it);
+                    break;
+                }
+            }
+        }
+
+        void remove_out_edge(const int neighbour) {
+            for (auto it = out_edges.begin(); it != out_edges.end(); ++it) {
+                if (it->neighbour == neighbour) {
+                    out_edges.erase(it);
+                    break;
+                }
+            }
+        }
     };
 
     int parse_fmi_file(std::fstream input_file, std::vector<CHBuildNode> &nodes);

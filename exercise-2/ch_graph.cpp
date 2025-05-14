@@ -231,16 +231,16 @@ namespace exercise::two {
                               std::list<FMIEdge> &shortcuts) {
         const auto &node = nodes[node_index];
 
-        for (auto [in_node, in_edge]: node.in_edges) {
+        for (auto [in_node, in_weight]: node.in_edges) {
             dijkstra.set_source(in_node);
 
-            for (auto [out_node, out_edge]: node.out_edges) {
+            for (auto [out_node, out_weight]: node.out_edges) {
                 if (in_node == out_node)
                     continue;
 
                 // check if shortest-path from in_node to out_node goes over this node
                 const int distance = dijkstra.shortest_path_to(out_node);
-                const int direct_distance = in_edge.weight + out_edge.weight;
+                const int direct_distance = in_weight + out_weight;
                 if (distance < direct_distance)
                     continue;
 
@@ -298,8 +298,8 @@ namespace exercise::two {
         working_nodes.resize(nodes.size());
         for (auto &[id, level, in_edges, out_edges]: nodes) {
             auto copy = CHBuildNode{id, level};
-            copy.in_edges.insert(in_edges.begin(), in_edges.end());
-            copy.out_edges.insert(out_edges.begin(), out_edges.end());
+            copy.in_edges.insert(copy.in_edges.begin(), in_edges.begin(), in_edges.end());
+            copy.out_edges.insert(copy.out_edges.begin(), out_edges.begin(), out_edges.end());
 
             working_nodes[id] = copy;
         }
@@ -340,12 +340,12 @@ namespace exercise::two {
             std::cout << "[Info] Adding " << shortcuts.size() << " shortcuts for level " << level << std::endl;
             for (auto &[from, to, weight]: shortcuts) {
                 // add shortcuts to graph
-                nodes[from].out_edges[to] = CHBuildEdge{to, weight};
-                nodes[to].in_edges[from] = CHBuildEdge{from, weight};
+                nodes[from].out_edges.emplace_back(to, weight);
+                nodes[to].in_edges.emplace_back(from, weight);
 
                 // and also to work graph
-                working_nodes[from].out_edges[to] = CHBuildEdge{to, weight};
-                working_nodes[to].in_edges[from] = CHBuildEdge{from, weight};
+                working_nodes[from].out_edges.emplace_back(to, weight);
+                working_nodes[to].in_edges.emplace_back(from, weight);
             }
 
             // prepare next independent set
@@ -358,10 +358,10 @@ namespace exercise::two {
             for (const auto node: independent_set) {
                 // delete node in working graph by deleting all in_edges and out_edges
                 for (auto [in_node, in_edge]: working_nodes[node].in_edges) {
-                    working_nodes[in_node].out_edges.erase(node);
+                    working_nodes[in_node].remove_out_edge(node);
                 }
                 for (auto [out_node, out_edge]: working_nodes[node].out_edges) {
-                    working_nodes[out_node].in_edges.erase(node);
+                    working_nodes[out_node].remove_in_edge(node);
                 }
                 // assign level
                 nodes[node].level = level;
@@ -420,16 +420,16 @@ namespace exercise::two {
             m_up_edges_offsets[new_index] = up_edge_head;
             m_down_edges_offsets[new_index] = down_edge_head;
 
-            for (const auto &[out_node, out_edge]: out_edges) {
+            for (const auto &[out_node, out_weight]: out_edges) {
                 const auto new_out_id = m_node_index_map[out_node];
                 if (nodes[new_out_id].level > level) {
-                    m_up_edges[up_edge_head++] = Edge{new_out_id, out_edge.weight};
+                    m_up_edges[up_edge_head++] = Edge{new_out_id, out_weight};
                 }
             }
-            for (const auto &[in_node, in_edge]: in_edges) {
+            for (const auto &[in_node, in_weight]: in_edges) {
                 const auto new_in_id = m_node_index_map[in_node];
                 if (nodes[new_in_id].level > level) {
-                    m_down_edges[down_edge_head++] = Edge{new_in_id, in_edge.weight};
+                    m_down_edges[down_edge_head++] = Edge{new_in_id, in_weight};
                 }
             }
         }
