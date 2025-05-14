@@ -251,13 +251,23 @@ namespace exercise::two {
     }
 
     static std::vector<int> find_independent_set(const std::vector<CHBuildNode> &nodes,
-                                                 const std::unordered_set<int> &uncontracted_nodes) {
+                                                 std::vector<int> &uncontracted_nodes) {
         std::unordered_set<int> independent_set;
 
-        for (const auto &node_id: uncontracted_nodes) {
-            //const auto node_id = static_cast<int>(rand() % uncontracted_nodes.size());
-            const auto &node = nodes[node_id];
+        // sort nodes by upper bound for edge difference = shortcuts_added - edges_deleted
+        std::sort(uncontracted_nodes.begin(), uncontracted_nodes.end(),
+                  [&nodes](auto a, auto b) {
+                      const CHBuildNode &nodeA = nodes[a];
+                      const CHBuildNode &nodeB = nodes[b];
+                      const int edgeDiffA = (static_cast<int>(nodeA.in_edges.size()) - 1) * (
+                                                static_cast<int>(nodeA.out_edges.size()) - 1);
+                      const int edgeDiffB = (static_cast<int>(nodeB.in_edges.size()) - 1) * (
+                                                static_cast<int>(nodeB.out_edges.size()) - 1);
+                      return edgeDiffA < edgeDiffB;
+                  });
 
+        for (const auto node_index: uncontracted_nodes) {
+            const auto &node = nodes[node_index];
             bool independent = true;
             for (auto [in_node, _]: node.in_edges) {
                 if (independent_set.find(in_node) != independent_set.end()) {
@@ -265,8 +275,9 @@ namespace exercise::two {
                     break;
                 }
             }
-            if (!independent)
+            if (!independent) {
                 continue;
+            }
 
             for (auto [out_node, _]: node.out_edges) {
                 if (independent_set.find(out_node) != independent_set.end()) {
@@ -274,11 +285,11 @@ namespace exercise::two {
                     break;
                 }
             }
-
-            if (!independent)
+            if (!independent) {
                 continue;
+            }
 
-            independent_set.emplace(node_id);
+            independent_set.emplace(node.id);
         }
 
         return std::vector<int>{std::begin(independent_set), std::end(independent_set)};
@@ -287,11 +298,15 @@ namespace exercise::two {
     static int preprocess_graph(std::vector<CHBuildNode> &nodes, const int node_count, const int edge_count) {
         constexpr int PARALLEL_DIJKSTRAS = 16;
 
-        std::unordered_set<int> uncontracted_nodes{};
+        std::vector<bool> contracted;
+        contracted.resize(nodes.size(), false);
+        std::vector<int> uncontracted_nodes{};
+        uncontracted_nodes.reserve(nodes.size());
         for (const auto &node: nodes) {
-            uncontracted_nodes.emplace(node.id);
+            uncontracted_nodes.push_back(node.id);
         }
-        auto independent_set_handle = std::async(std::launch::async, find_independent_set, nodes, uncontracted_nodes);
+        auto independent_set_handle = std::async(std::launch::async, find_independent_set, std::ref(nodes),
+                                                 std::ref(uncontracted_nodes));
 
         // generate CH working graph
         std::vector<CHBuildNode> working_nodes;
@@ -329,6 +344,18 @@ namespace exercise::two {
                 });
             }
 
+            // update remaining uncontracted nodes set
+            std::vector<int> remaining_uncontracted_nodes{};
+            remaining_uncontracted_nodes.reserve(uncontracted_nodes.size() - independent_set.size());
+            for (const auto node_index: independent_set) {
+                contracted[node_index] = true;
+            }
+            for (const auto node_index: uncontracted_nodes) {
+                if (contracted[node_index])
+                    continue;
+                remaining_uncontracted_nodes.push_back(node_index);
+            }
+
             // join threads
             std::list<FMIEdge> shortcuts;
             for (auto &thread: threads) {
@@ -349,10 +376,9 @@ namespace exercise::two {
             }
 
             // prepare next independent set
-            for (const auto node: independent_set) {
-                uncontracted_nodes.erase(node);
-            }
-            independent_set_handle = std::async(std::launch::async, find_independent_set, nodes, uncontracted_nodes);
+            uncontracted_nodes = remaining_uncontracted_nodes;
+            independent_set_handle = std::async(std::launch::async, find_independent_set, nodes,
+                                                std::ref(uncontracted_nodes));
 
             // delete node from working graph
             for (const auto node: independent_set) {
