@@ -81,12 +81,14 @@ int main(const int argc, char *argv[]) {
 
     {
         constexpr int start = 377371, end = 754742, result = 436627;
+        //constexpr int start = 1, end = 2, result = 3;
         const auto dist = graph.compute_shortest_path(start, end);
         std::cout << "Distance from " << start << " to " << end << " is: " << dist << " [Correct: " << result << "]" <<
                 std::endl;
     }
     {
         constexpr int start = 377377, end = 754742, result = 437280;
+        //constexpr int start = 4, end = 3, result = 4;
         const auto dist = graph.compute_shortest_path(start, end);
         std::cout << "Distance from " << start << " to " << end << " is: " << dist << " [Correct: " << result << "]" <<
                 std::endl;

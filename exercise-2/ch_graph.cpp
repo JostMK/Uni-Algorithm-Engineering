@@ -326,11 +326,14 @@ namespace exercise::two {
         while (shortcuts_added < edge_count) {
             std::cout << "[Info] Finding independent set for level " << level << std::endl;
             auto independent_set = independent_set_handle.get();
+            if (independent_set.empty())
+                break;
 
             std::cout << "[Info] Contracting nodes of independent set with " << independent_set.size() <<
                     " nodes for level " << level << " in parallel" << std::endl;
             std::array<std::future<std::list<FMIEdge> >, PARALLEL_DIJKSTRAS> threads;
-            const int nodes_per_thread = std::ceil(independent_set.size() / threads.size());
+            const int nodes_per_thread = std::ceil(
+                static_cast<double>(independent_set.size()) / static_cast<double>(threads.size()));
             for (int i = 0; i < threads.size(); ++i) {
                 threads[i] = std::async(std::launch::async, [independent_set, working_nodes, nodes_per_thread, i]() {
                     ProgressiveDijkstra dijkstra{working_nodes};
@@ -338,7 +341,7 @@ namespace exercise::two {
                     const auto last_node = std::min(nodes_per_thread * (i + 1),
                                                     static_cast<int>(independent_set.size()));
                     for (int j = i * nodes_per_thread; j < last_node; ++j) {
-                        contract_node(working_nodes, dijkstra, i, shortcuts);
+                        contract_node(working_nodes, dijkstra, independent_set[i], shortcuts);
                     }
                     return shortcuts;
                 });
@@ -375,6 +378,30 @@ namespace exercise::two {
                 working_nodes[to].in_edges.emplace_back(from, weight);
             }
 
+            shortcuts_added += static_cast<int>(shortcuts.size());
+            nodes_contracted += static_cast<int>(independent_set.size());
+
+            if (remaining_uncontracted_nodes.empty()) {
+                // break early to avoid unnecessary work
+                for (const auto node: independent_set) {
+                    nodes[node].level = level;
+                }
+                break;
+            }
+
+            if (shortcuts_added >= edge_count) {
+                // break early to avoid unnecessary work
+                for (const auto node: independent_set) {
+                    nodes[node].level = level;
+                }
+                level++;
+                // assign all uncontracted nodes to the top level
+                for (const int node: uncontracted_nodes) {
+                    nodes[node].level = level;
+                }
+                break;
+            }
+
             // prepare next independent set
             uncontracted_nodes = remaining_uncontracted_nodes;
             independent_set_handle = std::async(std::launch::async, find_independent_set, nodes,
@@ -392,21 +419,17 @@ namespace exercise::two {
                 // assign level
                 nodes[node].level = level;
             }
-
-            shortcuts_added += static_cast<int>(shortcuts.size());
-            nodes_contracted += static_cast<int>(independent_set.size());
             level++;
 
-            if (shortcuts_added >= edge_count) {
-                break;
-            }
-
-            const auto progress_percent = std::round((1000.0 * shortcuts_added) / edge_count) / 10;
+            const auto progress_percent = std::round((1000.0 * shortcuts_added) / edge_count) / 10.0;
             std::cout << "[Progress: " << progress_percent << "%] " << shortcuts_added << " shortcuts added" <<
                     std::endl;
         }
+
+        const auto nodes_contracted_percent = std::round((1000.0 * nodes_contracted) / node_count) / 10.0;
         std::cout << "[Progress: 100%] " << shortcuts_added << " shortcuts added" << std::endl;
-        std::cout << "Contracted " << nodes_contracted << " out of " << node_count << " nodes" << std::endl;
+        std::cout << "[Info] Contracted " << nodes_contracted << " out of " << node_count << " nodes [" <<
+                nodes_contracted_percent << "%]" << std::endl;
 
         return edge_count + shortcuts_added;
     }
@@ -448,13 +471,13 @@ namespace exercise::two {
 
             for (const auto &[out_node, out_weight]: out_edges) {
                 const auto new_out_id = m_node_index_map[out_node];
-                if (nodes[new_out_id].level > level) {
+                if (nodes[new_out_id].level >= level) {
                     m_up_edges[up_edge_head++] = Edge{new_out_id, out_weight};
                 }
             }
             for (const auto &[in_node, in_weight]: in_edges) {
                 const auto new_in_id = m_node_index_map[in_node];
-                if (nodes[new_in_id].level > level) {
+                if (nodes[new_in_id].level >= level) {
                     m_down_edges[down_edge_head++] = Edge{new_in_id, in_weight};
                 }
             }
