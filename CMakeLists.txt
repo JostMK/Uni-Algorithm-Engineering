@@ -19,6 +19,7 @@ add_custom_command(TARGET Exercise-1 POST_BUILD
         COMMENT "Copying queries file"
 )
 
+
 add_executable(Exercise-2
         exercise-2/main.cpp
         exercise-2/ch_graph.cpp
@@ -34,4 +35,9 @@ add_executable(Exercise-2
 add_custom_command(TARGET Exercise-2 POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_SOURCE_DIR}/exercise-2/graph.fmi ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/graph.fmi
         COMMENT "Copying graph file"
+)
+
+
+add_executable(Exercise-3
+        exercise-3/main.cpp
 )
