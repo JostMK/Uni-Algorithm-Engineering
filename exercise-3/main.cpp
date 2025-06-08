@@ -41,7 +41,33 @@ static std::vector<uint32_t> intersect_naive(const std::vector<uint32_t> &v1, co
 }
 
 static std::vector<uint32_t> intersect_binary(const std::vector<uint32_t> &v1, const std::vector<uint32_t> &v2) {
-    return {};
+    std::vector<uint32_t> result;
+    result.reserve(v2.size());
+
+    uint32_t lower_bound = 0;
+    uint32_t upper_bound = v1.size();
+    for (uint32_t i: v2) {
+        uint32_t head = (lower_bound + upper_bound) / 2;
+        while (upper_bound - lower_bound > 0) {
+            if (v1[head] == i) {
+                result.push_back(i);
+                break;
+            }
+
+            if (i < v1[head]) {
+                upper_bound = head;
+            } else {
+                lower_bound = head;
+            }
+
+            head = (lower_bound + upper_bound) / 2;
+        }
+
+        lower_bound = head + 1;
+        upper_bound = v1.size();
+    }
+
+    return result;
 }
 
 static std::vector<uint32_t> intersect_galopping(const std::vector<uint32_t> &v1, const std::vector<uint32_t> &v2) {
@@ -74,7 +100,7 @@ int main(const int argc, char *argv[]) {
         elements_a[i] = i;
     }
 
-    auto sw = Stopwatch<std::chrono::milliseconds>::Start();
+    auto sw = Stopwatch<std::chrono::microseconds>::Start();
     const uint32_t element_count_b = std::floor(std::log2(element_count_a));
     for (uint32_t i = 0; i < element_count_b; i++) {
         const auto count = static_cast<uint32_t>(static_cast<long double>(element_count_a) / std::pow(2, i));
@@ -90,20 +116,35 @@ int main(const int argc, char *argv[]) {
 
         sw.Restart();
 
-        intersect_naive(elements_a, elements_b);
-        const auto naive_time = sw.Split();
         std::stringstream naive_time_str;
-        naive_time_str << std::fixed << std::setprecision(2) << naive_time << "ms";
+        {
+            const auto naive_result = intersect_naive(elements_a, elements_b);
+            const auto naive_time = sw.Split();
+            if (naive_result.size() == elements_b.size())
+                naive_time_str << std::fixed << std::setprecision(2) << naive_time << "us";
+            else
+                naive_time_str << "Failed";
+        }
 
-        intersect_binary(elements_a, elements_b);
-        const auto binary_time = sw.Split();
         std::stringstream binary_time_str;
-        binary_time_str << std::fixed << std::setprecision(2) << binary_time << "ms";
+        {
+            const auto binary_result = intersect_binary(elements_a, elements_b);
+            const auto binary_time = sw.Split();
+            if (binary_result.size() == elements_b.size())
+                binary_time_str << std::fixed << std::setprecision(2) << binary_time << "us";
+            else
+                binary_time_str << "Failed";
+        }
 
-        intersect_galopping(elements_a, elements_b);
-        const auto galopping_time = sw.Stop();
         std::stringstream galopping_time_str;
-        galopping_time_str << std::fixed << std::setprecision(2) << galopping_time << "ms";
+        {
+            const auto galopping_result = intersect_galopping(elements_a, elements_b);
+            const auto galopping_time = sw.Stop();
+            if (galopping_result.size() == elements_b.size())
+                galopping_time_str << std::fixed << std::setprecision(2) << galopping_time << "us";
+            else
+                galopping_time_str << "Failed";
+        }
 
         std::cout << "[BENCHMARK] "
                   << "Naive: " << std::left << std::setw(12) << naive_time_str.str()
