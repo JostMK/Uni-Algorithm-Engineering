@@ -40,4 +40,6 @@ add_custom_command(TARGET Exercise-2 POST_BUILD
 
 add_executable(Exercise-3
         exercise-3/main.cpp
+        exercise-3/Exercise1.h
+        exercise-3/Intersect.h
 )
