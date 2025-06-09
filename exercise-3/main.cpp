@@ -9,7 +9,6 @@
 #include <cmath>
 #include <iomanip>
 #include <random>
-#include <set>
 #include <sstream>
 
 #include "Stopwatch.h"
@@ -45,26 +44,25 @@ static std::vector<uint32_t> intersect_binary(const std::vector<uint32_t> &v1, c
     result.reserve(v2.size());
 
     uint32_t lower_bound = 0;
-    uint32_t upper_bound = v1.size();
-    for (uint32_t i: v2) {
-        uint32_t head = (lower_bound + upper_bound) / 2;
-        while (upper_bound - lower_bound > 0) {
-            if (v1[head] == i) {
-                result.push_back(i);
+    uint32_t upper_bound = v1.size() - 1;
+    for (uint32_t b: v2) {
+        uint32_t head = lower_bound;
+        while (upper_bound - lower_bound >= 0) {
+            head = (lower_bound + upper_bound) / 2;
+
+            if (v1[head] == b) {
+                result.push_back(b);
                 break;
             }
 
-            if (i < v1[head]) {
-                upper_bound = head;
-            } else {
-                lower_bound = head;
-            }
-
-            head = (lower_bound + upper_bound) / 2;
+            if (b < v1[head])
+                upper_bound = head - 1;
+            else
+                lower_bound = head + 1;
         }
 
-        lower_bound = head + 1;
-        upper_bound = v1.size();
+        lower_bound = head;
+        upper_bound = v1.size() - 1;
     }
 
     return result;
