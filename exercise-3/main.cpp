@@ -68,8 +68,54 @@ static std::vector<uint32_t> intersect_binary(const std::vector<uint32_t> &v1, c
     return result;
 }
 
-static std::vector<uint32_t> intersect_galopping(const std::vector<uint32_t> &v1, const std::vector<uint32_t> &v2) {
-    return {};
+static std::vector<uint32_t> intersect_galloping(const std::vector<uint32_t> &v1, const std::vector<uint32_t> &v2) {
+    if (v1.empty() || v2.empty())
+        return {};
+
+    std::vector<uint32_t> result;
+    result.reserve(v2.size());
+
+    uint32_t lower_bound = 0;
+    uint32_t upper_bound = v1.size() - 1;
+    bool galop = false;
+    for (uint32_t b: v2) {
+        if (galop) {
+            uint32_t jump = lower_bound;
+            for (int i = 0; v1[jump] < b; i++) {
+                jump = lower_bound + static_cast<uint32_t>(std::pow(2, i));
+
+                if (jump >= v1.size()) {
+                    jump = v1.size() - 1;
+                    break;
+                }
+            }
+            if (v1[jump] == b)
+                lower_bound = jump;
+            upper_bound = jump;
+        }
+
+        uint32_t head = lower_bound;
+        while (upper_bound - lower_bound >= 0) {
+            head = (lower_bound + upper_bound) / 2;
+
+            if (v1[head] == b) {
+                result.push_back(b);
+                break;
+            }
+
+            if (b < v1[head]) {
+                upper_bound = head - 1;
+            } else {
+                lower_bound = head + 1;
+            }
+        }
+
+        lower_bound = head;
+        upper_bound = v1.size() - 1;
+        galop = true;
+    }
+
+    return result;
 }
 
 int main(const int argc, char *argv[]) {
@@ -134,20 +180,20 @@ int main(const int argc, char *argv[]) {
                 binary_time_str << "Failed";
         }
 
-        std::stringstream galopping_time_str;
+        std::stringstream galloping_time_str;
         {
-            const auto galopping_result = intersect_galopping(elements_a, elements_b);
-            const auto galopping_time = sw.Stop();
-            if (galopping_result.size() == elements_b.size())
-                galopping_time_str << std::fixed << std::setprecision(2) << galopping_time << "us";
+            const auto galloping_result = intersect_galloping(elements_a, elements_b);
+            const auto galloping_time = sw.Stop();
+            if (galloping_result.size() == elements_b.size())
+                galloping_time_str << std::fixed << std::setprecision(2) << galloping_time << "us";
             else
-                galopping_time_str << "Failed";
+                galloping_time_str << "Failed";
         }
 
         std::cout << "[BENCHMARK] "
                   << "Naive: " << std::left << std::setw(12) << naive_time_str.str()
                   << "Binary: " << std::left << std::setw(12) << binary_time_str.str()
-                  << "Galopping: " << std::left << std::setw(12) << galopping_time_str.str()
+                  << "Galloping: " << std::left << std::setw(12) << galloping_time_str.str()
                   << " for " << elements_b.size() << " Elements"
                   << std::endl;
     }
