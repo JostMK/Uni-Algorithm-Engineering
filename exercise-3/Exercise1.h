@@ -20,6 +20,8 @@
 
 namespace Sheet3 {
     inline void exercise_one(uint32_t element_count_a) {
+        std::cout << "[BENCHMARK] Running benchmark with " << element_count_a << " elements." << std::endl;
+
         std::vector<uint32_t> elements_a(element_count_a);
         for (uint32_t i = 0; i < element_count_a; i++) {
             elements_a[i] = i;
