@@ -22,7 +22,8 @@ namespace Sheet3 {
 
     private:
         std::vector<Movie> m_Movies;
-        std::unordered_map<std::string, std::vector<uint32_t>> m_Index;
-    };
+        std::unordered_map<std::string, std::vector<uint32_t> > m_Index;
 
+        static std::string normalize_line(const std::string &line);
+    };
 } // Sheet3

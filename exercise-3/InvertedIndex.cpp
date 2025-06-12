@@ -18,7 +18,7 @@ namespace Sheet3 {
             uint32_t index = m_Movies.size();
             m_Movies.push_back({title, description});
 
-            std::stringstream words_stream(line);
+            std::stringstream words_stream(normalize_line(line));
             std::string word;
             while (words_stream >> word) {
                 auto entry = m_Index.find(word);
@@ -38,7 +38,7 @@ namespace Sheet3 {
         bool is_first = true;
         std::vector<uint32_t> results;
 
-        std::stringstream words_stream(query);
+        std::stringstream words_stream(normalize_line(query));
         std::string word;
         while (words_stream >> word) {
             if (is_first) {
@@ -55,17 +55,42 @@ namespace Sheet3 {
             if (entry == m_Index.end())
                 return {};
 
-            results = intersect_galloping(results, entry->second);
+            results = intersect_naive(results, entry->second);
 
-            if (results.size() == 0)
+            if (results.empty())
                 return {};
         }
 
         std::vector<Movie> movies;
         movies.reserve(results.size());
-        for (auto i: results) {
+        for (const auto i: results) {
             movies.push_back(m_Movies[i]);
         }
         return movies;
+    }
+
+    std::string InvertedIndex::normalize_line(const std::string &line) {
+        auto result = line;
+        for (auto &c: result) {
+            // Replace punctuation with whitespace -> line gets split on whitespace characters into words
+            if (c == '.'
+                || c == ','
+                || c == ','
+                || c == '?'
+                || c == '!'
+                || c == ':'
+                || c == ';'
+                || c == '\''
+                || c == '"'
+                || c == '-'
+                || c == '&'
+            )
+                c = ' ';
+
+            // Normalize to lower-case
+            c = static_cast<char>(std::tolower(c));
+        }
+
+        return result;
     }
 } // Sheet3
