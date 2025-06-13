@@ -41,10 +41,9 @@ namespace Sheet3 {
             );
             std::sort(elements_b.begin(), elements_b.end());
 
-            sw.Restart();
-
             std::stringstream naive_time_str;
             {
+                sw.Restart();
                 const auto naive_result = intersect_naive(elements_a, elements_b);
                 const auto naive_time = sw.Split();
                 if (naive_result.size() == elements_b.size())
@@ -55,6 +54,7 @@ namespace Sheet3 {
 
             std::stringstream binary_time_str;
             {
+                sw.Restart();
                 const auto binary_result = intersect_binary(elements_a, elements_b);
                 const auto binary_time = sw.Split();
                 if (binary_result.size() == elements_b.size())
@@ -65,6 +65,7 @@ namespace Sheet3 {
 
             std::stringstream galloping_time_str;
             {
+                sw.Restart();
                 const auto galloping_result = intersect_galloping(elements_a, elements_b);
                 const auto galloping_time = sw.Stop();
                 if (galloping_result.size() == elements_b.size())
