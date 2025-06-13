@@ -7,6 +7,36 @@
 #include "InvertedIndex.h"
 
 namespace Sheet3 {
+    inline std::vector<Movie> query_naive(const std::vector<Movie> &movies, const std::string &query) {
+        std::vector<Movie> results;
+
+        std::vector<std::string> words;
+        {
+            std::stringstream words_stream(normalize_line(query));
+            std::string word;
+            while (words_stream >> word) {
+                words.push_back(word);
+            }
+        }
+
+        for (const auto &movie: movies) {
+            bool valid = true;
+            const auto content = normalize_line(movie.title + " " + movie.description);
+
+            for (const auto &word: words) {
+                if (content.find(word) == std::string::npos) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (valid)
+                results.push_back(movie);
+        }
+
+        return results;
+    }
+
     inline void exercise_two(std::ifstream movies_data_file) {
         // Load movies from file:
         std::vector<Movie> movies;
@@ -57,7 +87,7 @@ namespace Sheet3 {
                 std::stringstream naive_time_str;
                 {
                     sw.Restart();
-                    const auto result = inverted_index_hm.search(query);
+                    const auto result = query_naive(movies, query);
                     const auto time = sw.Stop();
                     if (result.empty())
                         naive_time_str << "Failed";
