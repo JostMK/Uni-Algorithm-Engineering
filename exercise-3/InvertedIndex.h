@@ -5,6 +5,7 @@
 #pragma once
 
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <unordered_map>
 #include <map>
@@ -14,7 +15,10 @@ namespace Sheet3 {
         std::string title;
         std::string description;
 
-        Movie(std::string title, std::string description) : title(title), description(description) {}
+        Movie() = default;
+
+        Movie(std::string title, std::string description) : title(std::move(title)),
+                                                            description(std::move(description)) {}
     };
 
     inline std::string normalize_line(const std::string &line) {

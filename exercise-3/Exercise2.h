@@ -37,6 +37,30 @@ namespace Sheet3 {
         return results;
     }
 
+    inline int rank_movie(const Movie &movie, const std::vector<std::string> &words) {
+        const auto norm_title = normalize_line(movie.title);
+        const auto norm_description = normalize_line(movie.description);
+        int title_length = static_cast<int>(norm_title.size());
+
+        // to hopefully decrease results with alot of additional unsearched words
+        int score = -title_length;
+
+        // hits in the title are 5 times more important
+        for (const auto &word: words) {
+            if (norm_title.find(word) != std::string::npos) {
+                score += 5;
+            }
+
+            auto pos = norm_description.find(word);
+            while (pos != std::string::npos) {
+                score += 1;
+                pos = norm_description.find(word, pos + 1);
+            }
+        }
+
+        return score;
+    }
+
     inline void exercise_two(std::ifstream movies_data_file) {
         // Load movies from file:
         std::vector<Movie> movies;
@@ -139,10 +163,36 @@ namespace Sheet3 {
 
             const auto result = inverted_index_st.search(input);
 
-            std::cout << "Found " << result.size() << " results:" << std::endl;
+            // Rank movies:
+            struct RankedMovie {
+                Movie movie;
+                int rank{};
+            };
+            std::vector<std::string> words;
+            {
+                std::stringstream words_stream(normalize_line(input));
+                std::string word;
+                while (words_stream >> word) {
+                    words.push_back(word);
+                }
+            }
+
+            std::vector<RankedMovie> ranked_movies;
+            ranked_movies.resize(result.size());
             for (int i = 0; i < result.size(); ++i) {
                 const auto &movie = movies[result[i]];
-                std::cout << i + 1 << ": " << movie.title << std::endl;
+                ranked_movies[i] = RankedMovie{movie, rank_movie(movie, words)};
+            }
+            std::sort(ranked_movies.begin(), ranked_movies.end(),
+                      [](const auto &a, const auto &b) {
+                          return a.rank > b.rank;
+                      }
+            );
+
+            std::cout << "Found " << result.size() << " results:" << std::endl;
+            for (int i = 0; i < ranked_movies.size(); ++i) {
+                const auto &movie = ranked_movies[i].movie;
+                std::cout << i + 1 << ": " << movie.title << "  [Score: " << ranked_movies[i].rank << "]" << std::endl;
             }
         }
     }
