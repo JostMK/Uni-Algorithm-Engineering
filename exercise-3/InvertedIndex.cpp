@@ -8,33 +8,27 @@
 #include "Intersect.h"
 
 namespace Sheet3 {
-    InvertedIndex::InvertedIndex(std::ifstream movies_data_file) {
-        std::string line;
-        while (std::getline(movies_data_file, line)) {
-            auto tab_index = line.find('\t');
-            auto title = line.substr(0, tab_index);
-            auto description = line.substr(tab_index + 1, line.size() - tab_index - 1);
-
-            uint32_t index = m_Movies.size();
-            m_Movies.push_back({title, description});
+    InvertedIndexHashMap::InvertedIndexHashMap(const std::vector<Movie> &movies) {
+        for (uint32_t i = 0; i < movies.size(); ++i) {
+            const auto &movie = movies[i];
+            const auto line = movie.title + " " + movie.description;
 
             std::stringstream words_stream(normalize_line(line));
             std::string word;
             while (words_stream >> word) {
                 auto entry = m_Index.find(word);
                 if (entry == m_Index.end()) {
-                    m_Index.emplace(word, std::vector<uint32_t>{index});
+                    m_Index.emplace(word, std::vector<uint32_t>{i});
                 } else {
                     auto &list = entry->second;
-                    if (list.at(list.size() - 1) != index)
-                        list.push_back(index);
+                    if (list.at(list.size() - 1) != i)
+                        list.push_back(i);
                 }
             }
         }
-        movies_data_file.close();
     }
 
-    std::vector<Movie> InvertedIndex::search(const std::string &query) {
+    std::vector<uint32_t> InvertedIndexHashMap::search(const std::string &query) const {
         bool is_first = true;
         std::vector<uint32_t> results;
 
@@ -61,36 +55,6 @@ namespace Sheet3 {
                 return {};
         }
 
-        std::vector<Movie> movies;
-        movies.reserve(results.size());
-        for (const auto i: results) {
-            movies.push_back(m_Movies[i]);
-        }
-        return movies;
-    }
-
-    std::string InvertedIndex::normalize_line(const std::string &line) {
-        auto result = line;
-        for (auto &c: result) {
-            // Replace punctuation with whitespace -> line gets split on whitespace characters into words
-            if (c == '.'
-                || c == ','
-                || c == ','
-                || c == '?'
-                || c == '!'
-                || c == ':'
-                || c == ';'
-                || c == '\''
-                || c == '"'
-                || c == '-'
-                || c == '&'
-            )
-                c = ' ';
-
-            // Normalize to lower-case
-            c = static_cast<char>(std::tolower(c));
-        }
-
-        return result;
+        return results;
     }
 } // Sheet3

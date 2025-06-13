@@ -12,18 +12,35 @@ namespace Sheet3 {
     struct Movie {
         std::string title;
         std::string description;
+
+        Movie(std::string title, std::string description) : title(title), description(description) {}
     };
 
-    class InvertedIndex {
-    public:
-        explicit InvertedIndex(std::ifstream movies_data_file);
+    inline std::string normalize_line(const std::string &line) {
+        auto result = line;
+        for (auto &c: result) {
+            // Replace punctuation with whitespace
+            // -> line gets split on whitespace characters into words
+            // -> this ensures words like "Shrek." or "Shrek's" all get listed under "shrek"
+            if (c == '.' || c == ',' || c == ',' || c == '?' || c == '!'
+                || c == ':' || c == ';' || c == '\'' || c == '"' || c == '-' || c == '&') {
+                c = ' ';
+            }
 
-        std::vector<Movie> search(const std::string &query);
+            // Normalize to lower-case
+            c = static_cast<char>(std::tolower(c));
+        }
+
+        return result;
+    }
+
+    class InvertedIndexHashMap {
+    public:
+        explicit InvertedIndexHashMap(const std::vector<Movie> &movies);
+
+        std::vector<uint32_t> search(const std::string &query) const;
 
     private:
-        std::vector<Movie> m_Movies;
         std::unordered_map<std::string, std::vector<uint32_t> > m_Index;
-
-        static std::string normalize_line(const std::string &line);
     };
 } // Sheet3
