@@ -10,12 +10,12 @@ Student: Jost Klink
 
 ## Exercise 1
 
-Arguments: ``-e1 <optional number>`` to automatically run exercise 1 with the specified amount of elements in the
-arrays.
+Run ``./exercise-3 -e1 <optional number>`` to automatically select exercise 1 with the specified amount of elements in
+the arrays.
 If no number is specified the program will prompt for it.
 
 ## Exercise 2
 
-Arguments: ``-e2 <optional path to movies.txt>`` to automatically run exercise 2 with the specified path as the path to
-the movies.txt data file.
+Run ``./exercise-3 -e2 <optional path to movies.txt>`` to automatically select exercise 2 with the specified path as the
+path to the movies.txt data file.
 If no path is specified the program will prompt for it.
