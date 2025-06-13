@@ -114,20 +114,24 @@ namespace Sheet3 {
         for (int i = 1; i < v2.size(); ++i) {
             uint32_t b = v2[i];
 
+            if (lower == v1.end())
+                break;
+
             upper = lower;
             uint32_t jump = 1;
-            std::advance(upper, jump);
-            while (*upper < b) {
+            upper += jump;
+            while (upper != v1.end() && *upper < b) {
                 jump <<= 1; // this is a little bit faster for bigger arrays, but has steps of 2^(i+1) - 1
-                std::advance(upper, jump);
-                //jump <<= 1; // this would be true galloping with steps of 2^i
 
-                if (upper >= v1.end()) {
+                if (jump >= std::distance(upper, v1.end())) {
                     upper = v1.end();
                     break;
                 }
+                upper += jump;
+
+                //jump <<= 1; // this would be true galloping with steps of 2^i
             }
-            if (*upper == b) {
+            if (upper != v1.end() && *upper == b) {
                 result.push_back(b);
                 lower = upper;
                 continue;
