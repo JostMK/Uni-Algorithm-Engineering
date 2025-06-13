@@ -25,7 +25,7 @@ namespace Sheet3 {
 
         std::stringstream construction_time_search_tree;
         sw.Restart();
-        const auto inverted_index_st = InvertedIndexHashMap(movies);
+        const auto inverted_index_st = InvertedIndexSearchTree(movies);
         const auto search_tree_time = sw.Stop();
         construction_time_search_tree << std::fixed << std::setprecision(2) << search_tree_time << "us";
 

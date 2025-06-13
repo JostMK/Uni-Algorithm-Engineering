@@ -7,6 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <map>
 
 namespace Sheet3 {
     struct Movie {
@@ -42,5 +43,15 @@ namespace Sheet3 {
 
     private:
         std::unordered_map<std::string, std::vector<uint32_t> > m_Index;
+    };
+
+    class InvertedIndexSearchTree {
+    public:
+        explicit InvertedIndexSearchTree(const std::vector<Movie> &movies);
+
+        std::vector<uint32_t> search(const std::string &query) const;
+
+    private:
+        std::map<std::string, std::vector<uint32_t> > m_Index;
     };
 } // Sheet3
