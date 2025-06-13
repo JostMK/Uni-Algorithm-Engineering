@@ -35,23 +35,65 @@ namespace Sheet3 {
         return result;
     }
 
-    class InvertedIndexHashMap {
-    public:
-        explicit InvertedIndexHashMap(const std::vector<Movie> &movies);
+    // Not the cleanest solution but I don't know enough about templates to make this nice .-.
+    // But having the exact same code twice just because the container changed also seemed wrong.
+#define InvertedIndexSearchTree InvertedIndex<std::map<std::string, std::vector<uint32_t>>>
+#define InvertedIndexHashmap InvertedIndex<std::unordered_map<std::string, std::vector<uint32_t>>>
 
-        std::vector<uint32_t> search(const std::string &query) const;
+    template<typename DATASTRUCT>
+    class InvertedIndex {
+    public:
+        explicit InvertedIndex(const std::vector<Movie> &movies) {
+            for (uint32_t i = 0; i < movies.size(); ++i) {
+                const auto &movie = movies[i];
+                const auto line = normalize_line(movie.title + " " + movie.description);
+
+                std::stringstream words_stream(line);
+                std::string word;
+                while (words_stream >> word) {
+                    auto entry = m_Index.find(word);
+                    if (entry == m_Index.end()) {
+                        m_Index.emplace(word, std::vector<uint32_t>{i});
+                    } else {
+                        auto &list = entry->second;
+                        if (list.at(list.size() - 1) != i)
+                            list.push_back(i);
+                    }
+                }
+            }
+        }
+
+        std::vector<uint32_t> search(const std::string &query) const {
+            bool is_first = true;
+            std::vector<uint32_t> results;
+
+            std::stringstream words_stream(normalize_line(query));
+            std::string word;
+            while (words_stream >> word) {
+                if (is_first) {
+                    auto entry = m_Index.find(word);
+                    if (entry == m_Index.end())
+                        return {};
+
+                    results = entry->second;
+                    is_first = false;
+                    continue;
+                }
+
+                auto entry = m_Index.find(word);
+                if (entry == m_Index.end())
+                    return {};
+
+                results = intersect_galloping(results, entry->second);
+
+                if (results.empty())
+                    return {};
+            }
+
+            return results;
+        }
 
     private:
-        std::unordered_map<std::string, std::vector<uint32_t> > m_Index;
-    };
-
-    class InvertedIndexSearchTree {
-    public:
-        explicit InvertedIndexSearchTree(const std::vector<Movie> &movies);
-
-        std::vector<uint32_t> search(const std::string &query) const;
-
-    private:
-        std::map<std::string, std::vector<uint32_t> > m_Index;
+        DATASTRUCT m_Index;
     };
 } // Sheet3

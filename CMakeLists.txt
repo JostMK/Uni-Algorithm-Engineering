@@ -43,6 +43,5 @@ add_executable(Exercise-3
         exercise-3/Exercise1.h
         exercise-3/Intersect.h
         exercise-3/Exercise2.h
-        exercise-3/InvertedIndex.cpp
         exercise-3/InvertedIndex.h
 )
