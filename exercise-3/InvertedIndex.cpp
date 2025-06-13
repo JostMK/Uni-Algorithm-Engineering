@@ -55,7 +55,7 @@ namespace Sheet3 {
             if (entry == m_Index.end())
                 return {};
 
-            results = intersect_naive(results, entry->second);
+            results = intersect_galloping(results, entry->second);
 
             if (results.empty())
                 return {};
