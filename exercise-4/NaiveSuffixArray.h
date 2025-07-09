@@ -11,7 +11,8 @@
 
 namespace Sheet4 {
     struct Article {
-        std::vector<std::string> content;
+        uint64_t start_index;
+        uint64_t end_index;
     };
 
     class NaiveSuffixArray {
@@ -19,11 +20,15 @@ namespace Sheet4 {
         explicit NaiveSuffixArray(std::ifstream data_file, int max_article_count = -1);
 
     private:
-        std::vector<Article> m_Articles;
-
+        /// Stores the full text being indexed
         std::string m_FullText;
-        std::vector<size_t> m_Suffixes;
-        std::vector<size_t> m_SuffixToArticleMap;
+        /// Stores the index into m_FullText where the suffix begins
+        std::vector<uint64_t> m_Suffixes; // needs to fit indices up to 6 billion
+        /// Stores the index into m_Articles where the suffix (beginning at the accessed index) belongs to
+        std::vector<uint32_t> m_SuffixToArticleMap; // needs to fit indices up to 4.3 million
+
+        /// Stores the index of where the article begins and ends in m_FullText
+        std::vector<Article> m_Articles;
     };
 } // Sheet4
 

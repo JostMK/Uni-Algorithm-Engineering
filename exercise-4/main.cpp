@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "NaiveSuffixArray.h"
+#include "Stopwatch.h"
 
 const std::string WIKI_FILE = "dewiki-20220201-clean.txt";
 
@@ -29,7 +30,12 @@ int main(int argc, char *argv[]) {
 
     // compute suffix array with naive sorting
     // output construction time
-    Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), 3);
+    {
+        auto sw = Stopwatch<std::chrono::minutes>::Start();
+        Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), 100000);
+        const auto naive_time = sw.Stop();
+        std::cout << "Created naive suffix array in " << naive_time << " minutes." << std::endl;
+    }
 
     // compute suffix array with recursive sorting
     // output construction time
