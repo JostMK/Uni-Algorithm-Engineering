@@ -45,3 +45,9 @@ add_executable(Exercise-3
         exercise-3/Exercise2.h
         exercise-3/InvertedIndex.h
 )
+
+add_executable(Exercise-4
+        exercise-4/main.cpp
+        exercise-4/NaiveSuffixArray.cpp
+        exercise-4/NaiveSuffixArray.h
+)
