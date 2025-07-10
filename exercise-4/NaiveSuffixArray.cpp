@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <set>
 
 namespace Sheet4 {
     NaiveSuffixArray::NaiveSuffixArray(std::ifstream data_file, const int max_article_count) {
@@ -51,5 +52,60 @@ namespace Sheet4 {
 
         // print stats
         std::cout << "Indexed " << m_FullText.size() << " characters" << std::endl;
+    }
+
+    std::vector<Article> NaiveSuffixArray::query(const std::string &substring) const {
+        std::set<uint32_t> articles;
+
+        // binary search the substring in the suffix array
+        size_t lower_bound = 0;
+        size_t upper_bound = m_FullText.size() - 1;
+        while (lower_bound <= upper_bound) {
+            const auto index = (lower_bound + upper_bound) / 2;
+            const auto suffix = m_Suffixes[index];
+            const auto comp = std::char_traits<char>::compare(&m_FullText[suffix], &substring[0], substring.size());
+
+            if (comp == 0) {
+                lower_bound = index - 1;
+                upper_bound = index + 1;
+                articles.insert(m_SuffixToArticleMap[suffix]);
+                break;
+            }
+
+            if (comp < 0) {
+                lower_bound = index + 1;
+            } else {
+                upper_bound = index - 1;
+            }
+        }
+
+        // search for more hits to the left and right
+        while (lower_bound > 0) {
+            const auto suffix = m_Suffixes[lower_bound];
+            const auto comp = std::char_traits<char>::compare(&m_FullText[suffix], &substring[0], substring.size());
+            if (comp != 0)
+                break;
+
+            articles.insert(m_SuffixToArticleMap[suffix]);
+            lower_bound--;
+        }
+
+        while (upper_bound < m_FullText.size()) {
+            const auto suffix = m_Suffixes[upper_bound];
+            const auto comp = std::char_traits<char>::compare(&m_FullText[suffix], &substring[0], substring.size());
+            if (comp != 0)
+                break;
+
+            articles.insert(m_SuffixToArticleMap[suffix]);
+            upper_bound--;
+        }
+
+        // create result vector
+        std::vector<Article> result;
+        for (const auto index: articles) {
+            result.push_back(m_Articles[index]);
+        }
+
+        return result;
     }
 } // Sheet4

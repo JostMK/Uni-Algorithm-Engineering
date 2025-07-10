@@ -32,9 +32,11 @@ int main(int argc, char *argv[]) {
     // output construction time
     {
         auto sw = Stopwatch<std::chrono::minutes>::Start();
-        Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), 100000);
+        Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), 10);
         const auto naive_time = sw.Stop();
         std::cout << "Created naive suffix array in " << naive_time << " minutes." << std::endl;
+
+        naive_suffix_array.query("deutlich");
     }
 
     // compute suffix array with recursive sorting

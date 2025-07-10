@@ -19,6 +19,8 @@ namespace Sheet4 {
     public:
         explicit NaiveSuffixArray(std::ifstream data_file, int max_article_count = -1);
 
+        std::vector<Article> query(const std::string &substring) const;
+
     private:
         /// Stores the full text being indexed
         std::string m_FullText;
