@@ -102,10 +102,59 @@ namespace Sheet4 {
 
         // create result vector
         std::vector<Article> result;
+        result.reserve(m_Articles.size());
         for (const auto index: articles) {
             result.push_back(m_Articles[index]);
         }
 
         return result;
+    }
+
+    std::string NaiveSuffixArray::generate_preview(const std::vector<Article> &articles,
+                                                   const std::string &substring,
+                                                   const size_t max_article_count) const {
+        std::string preview;
+        for (int i = 0; i < std::min(articles.size(), max_article_count); ++i) {
+            const auto &[start_index, end_index] = articles[i];
+            const auto text = m_FullText.substr(start_index, end_index - start_index);
+
+            // Get the first 5 words of the article
+            size_t prefix_end = 0;
+            for (int j = 0; j < 5; ++j) {
+                const auto index = text.find(' ', prefix_end);
+                if (index == std::string::npos)
+                    break;
+                prefix_end = index + 1;
+            }
+
+            // Get 2 words around query
+            const auto query_index = text.find(substring);
+            auto pre_face = query_index >= 2 ? query_index - 2 : query_index;
+            auto post_face = query_index + substring.size() + 1;
+            for (int j = 0; j < 2; ++j) {
+                auto index = text.rfind(' ', pre_face);
+                if (index != std::string::npos)
+                    pre_face = index - 1;
+
+                index = text.find(' ', post_face);
+                if (index != std::string::npos)
+                    post_face = index + 1;
+            }
+
+            if (prefix_end >= pre_face) {
+                preview.append(text.substr(0, std::max(substring.size(), prefix_end - 1))).append("...\n");
+            } else {
+                preview.append(text.substr(0, prefix_end))
+                        .append("...")
+                        .append(text.substr(pre_face + 1, post_face - pre_face - 1))
+                        .append("...\n");
+            }
+        }
+        if (articles.size() > max_article_count) {
+            const auto articles_count_left = articles.size() - max_article_count;
+            preview.append("...and ").append(std::to_string(articles_count_left)).append(" more article(s).");
+        }
+
+        return preview;
     }
 } // Sheet4
