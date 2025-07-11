@@ -2,7 +2,7 @@
 // Created by Jost on 09/07/2025.
 //
 
-#include "NaiveSuffixArray.h"
+#include "SuffixArray.h"
 
 #include <algorithm>
 #include <execution>
@@ -10,7 +10,7 @@
 #include <set>
 
 namespace Sheet4 {
-    NaiveSuffixArray::NaiveSuffixArray(std::ifstream data_file, const uint32_t max_article_count) {
+    SuffixArray::SuffixArray(std::ifstream data_file, const uint32_t max_article_count) {
         if (max_article_count > 0)
             m_Articles.reserve(max_article_count);
 
@@ -55,7 +55,7 @@ namespace Sheet4 {
         std::cout << "Indexed " << m_FullText.size() << " characters" << std::endl;
     }
 
-    std::vector<Article> NaiveSuffixArray::query(const std::string &substring) const {
+    std::vector<Article> SuffixArray::query(const std::string &substring) const {
         std::set<uint32_t> articles;
 
         // binary search the substring in the suffix array
@@ -111,7 +111,7 @@ namespace Sheet4 {
         return result;
     }
 
-    std::string NaiveSuffixArray::generate_preview(const std::vector<Article> &articles,
+    std::string SuffixArray::generate_preview(const std::vector<Article> &articles,
                                                    const std::string &substring,
                                                    const size_t max_article_count) const {
         std::string preview;

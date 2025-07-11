@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "NaiveSuffixArray.h"
+#include "SuffixArray.h"
 #include "Stopwatch.h"
 
 const std::string WIKI_FILE = "dewiki-20220201-clean.txt";
@@ -47,7 +47,7 @@ int main(const int argc, char *argv[]) {
     // compute suffix array with naive sorting
 
     auto sw_min = Stopwatch<std::chrono::minutes>::Start();
-    const Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), article_count);
+    const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count);
     const auto create_time = sw_min.Stop();
     std::cout << "Created naive suffix array in " << create_time << " minutes." << std::endl;
 
@@ -67,7 +67,7 @@ int main(const int argc, char *argv[]) {
             break;
 
         sw_ms.Restart();
-        const auto articles = naive_suffix_array.query(input);
+        const auto articles = suffix_array.query(input);
         const auto query_time = sw_ms.Stop();
         std::cout << "Queried suffix array in " << query_time << " ms." << std::endl;
 
@@ -76,7 +76,7 @@ int main(const int argc, char *argv[]) {
             continue;
         }
 
-        const auto preview = naive_suffix_array.generate_preview(articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
+        const auto preview = suffix_array.generate_preview(articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
         std::cout << "\n" << preview << "\n" << std::endl;
     }
 

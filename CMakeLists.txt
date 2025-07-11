@@ -48,6 +48,6 @@ add_executable(Exercise-3
 
 add_executable(Exercise-4
         exercise-4/main.cpp
-        exercise-4/NaiveSuffixArray.cpp
-        exercise-4/NaiveSuffixArray.h
+        exercise-4/SuffixArray.cpp
+        exercise-4/SuffixArray.h
 )

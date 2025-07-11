@@ -2,8 +2,8 @@
 // Created by Jost on 09/07/2025.
 //
 
-#ifndef NAIVESUFFIXARRAY_H
-#define NAIVESUFFIXARRAY_H
+#ifndef SUFFIXARRAY_H
+#define SUFFIXARRAY_H
 
 #include <fstream>
 #include <string>
@@ -15,9 +15,9 @@ namespace Sheet4 {
         uint64_t end_index;
     };
 
-    class NaiveSuffixArray {
+    class SuffixArray {
     public:
-        explicit NaiveSuffixArray(std::ifstream data_file, uint32_t max_article_count = -1);
+        explicit SuffixArray(std::ifstream data_file, uint32_t max_article_count = -1);
 
         std::vector<Article> query(const std::string &substring) const;
 
@@ -37,4 +37,4 @@ namespace Sheet4 {
     };
 } // Sheet4
 
-#endif //NAIVESUFFIXARRAY_H
+#endif //SUFFIXARRAY_H
