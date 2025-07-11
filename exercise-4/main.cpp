@@ -10,9 +10,24 @@
 #include "Stopwatch.h"
 
 const std::string WIKI_FILE = "dewiki-20220201-clean.txt";
+constexpr uint32_t DEFAULT_ARTICLE_COUNT = 100000;
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     // parse argc for line count
+    auto article_count = DEFAULT_ARTICLE_COUNT;
+    if (argc >= 2) {
+        try {
+            article_count = std::stoll(argv[1]);
+        } catch ([[maybe_unused]] std::exception const &ex) {
+            std::cout << "[ERROR] Failed to parse article count argument: '" << argv[1]
+                    << "', expected a number greater than zero." << std::endl;
+            std::cout << "[INFO] Using default value of "
+                << DEFAULT_ARTICLE_COUNT << " for article count." << std::endl;
+        }
+    } else {
+        std::cout << "[INFO] No article count argument passed. Using default value of "
+                << DEFAULT_ARTICLE_COUNT << "." << std::endl;
+    }
 
     // open data file
     if (!std::filesystem::exists(WIKI_FILE)) {
@@ -32,7 +47,7 @@ int main(int argc, char *argv[]) {
     // output construction time
     {
         auto sw_min = Stopwatch<std::chrono::minutes>::Start();
-        const Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), 100000);
+        const Sheet4::NaiveSuffixArray naive_suffix_array(std::move(input_stream), article_count);
         const auto create = sw_min.Stop();
         std::cout << "Created naive suffix array in " << create << " minutes." << std::endl;
 

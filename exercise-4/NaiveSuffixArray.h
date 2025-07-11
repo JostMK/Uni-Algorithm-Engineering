@@ -17,7 +17,7 @@ namespace Sheet4 {
 
     class NaiveSuffixArray {
     public:
-        explicit NaiveSuffixArray(std::ifstream data_file, int max_article_count = -1);
+        explicit NaiveSuffixArray(std::ifstream data_file, uint32_t max_article_count = -1);
 
         std::vector<Article> query(const std::string &substring) const;
 

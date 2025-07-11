@@ -9,7 +9,7 @@
 #include <set>
 
 namespace Sheet4 {
-    NaiveSuffixArray::NaiveSuffixArray(std::ifstream data_file, const int max_article_count) {
+    NaiveSuffixArray::NaiveSuffixArray(std::ifstream data_file, const uint32_t max_article_count) {
         if (max_article_count > 0)
             m_Articles.reserve(max_article_count);
 
