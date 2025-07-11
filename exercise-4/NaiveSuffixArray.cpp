@@ -5,6 +5,7 @@
 #include "NaiveSuffixArray.h"
 
 #include <algorithm>
+#include <execution>
 #include <iostream>
 #include <set>
 
@@ -48,7 +49,7 @@ namespace Sheet4 {
             return std::char_traits<char>::compare(&full_text[a], &full_text[b], full_text.size() - std::max(a, b)) < 0;
         };
 
-        std::sort(m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+        std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
 
         // print stats
         std::cout << "Indexed " << m_FullText.size() << " characters" << std::endl;
