@@ -115,6 +115,25 @@ namespace Sheet4 {
         return result;
     }
 
+    std::vector<Article> SuffixArray::naive_query(const std::string &substring) const {
+        std::set<uint32_t> articles;
+
+        auto pos = m_FullText.find(substring);
+        while (pos != std::string::npos) {
+            articles.insert(m_SuffixToArticleMap[pos]);
+            pos = m_FullText.find(substring, pos + 1);
+        }
+
+        // create result vector
+        std::vector<Article> result;
+        result.reserve(m_Articles.size());
+        for (const auto index: articles) {
+            result.push_back(m_Articles[index]);
+        }
+
+        return result;
+    }
+
     std::string SuffixArray::generate_preview(const std::vector<Article> &articles,
                                               const std::string &substring,
                                               const size_t max_article_count) const {

@@ -21,6 +21,8 @@ namespace Sheet4 {
 
         std::vector<Article> query(const std::string &substring) const;
 
+        std::vector<Article> naive_query(const std::string &substring) const;
+
         std::string generate_preview(const std::vector<Article> &articles, const std::string &substring,
                                      size_t max_article_count = 3) const;
 

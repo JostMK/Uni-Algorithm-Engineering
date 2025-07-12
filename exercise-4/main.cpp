@@ -47,7 +47,7 @@ int main(const int argc, char *argv[]) {
     // compute suffix array with naive sorting
 
     auto sw_min = Stopwatch<std::chrono::minutes>::Start();
-    const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, false);
+    const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, true);
     const auto create_time = sw_min.Stop();
     std::cout << "Created naive suffix array in " << create_time << " minutes." << std::endl;
 
@@ -71,12 +71,17 @@ int main(const int argc, char *argv[]) {
         const auto query_time = sw_ms.Stop();
         std::cout << "Queried suffix array in " << query_time << " ms." << std::endl;
 
+        sw_ms.Restart();
+        const auto naive_query_articles = suffix_array.naive_query(input);
+        const auto naive_query_time = sw_ms.Stop();
+        std::cout << "Queried naive in " << naive_query_time << " ms." << std::endl;
+
         if (articles.empty()) {
             std::cout << "\nNo articles found containing: '" << input << "'\n" << std::endl;
             continue;
         }
 
-        const auto preview = suffix_array.generate_preview(articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
+        const auto preview = suffix_array.generate_preview(naive_query_articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
         std::cout << "\n" << preview << "\n" << std::endl;
     }
 
