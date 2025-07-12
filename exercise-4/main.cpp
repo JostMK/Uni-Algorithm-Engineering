@@ -47,7 +47,7 @@ int main(const int argc, char *argv[]) {
     // compute suffix array with naive sorting
 
     auto sw_min = Stopwatch<std::chrono::minutes>::Start();
-    const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count);
+    const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, false);
     const auto create_time = sw_min.Stop();
     std::cout << "Created naive suffix array in " << create_time << " minutes." << std::endl;
 

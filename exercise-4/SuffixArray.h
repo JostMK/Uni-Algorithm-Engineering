@@ -17,7 +17,7 @@ namespace Sheet4 {
 
     class SuffixArray {
     public:
-        explicit SuffixArray(std::ifstream data_file, uint32_t max_article_count = -1);
+        explicit SuffixArray(std::ifstream data_file, uint32_t max_article_count = -1, bool construct_naively = false);
 
         std::vector<Article> query(const std::string &substring) const;
 
@@ -34,6 +34,9 @@ namespace Sheet4 {
 
         /// Stores the index of where the article begins and ends in m_FullText
         std::vector<Article> m_Articles;
+
+        void sort_suffixes_naive();
+        void sort_suffixes_iteratively();
     };
 } // Sheet4
 

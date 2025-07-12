@@ -10,7 +10,7 @@
 #include <set>
 
 namespace Sheet4 {
-    SuffixArray::SuffixArray(std::ifstream data_file, const uint32_t max_article_count) {
+    SuffixArray::SuffixArray(std::ifstream data_file, const uint32_t max_article_count, const bool construct_naively) {
         if (max_article_count > 0)
             m_Articles.reserve(max_article_count);
 
@@ -41,15 +41,19 @@ namespace Sheet4 {
                 m_SuffixToArticleMap.push_back(m_Articles.size());
             }
         }
+        // add end-of-text special character that compares the lowest to all other characters
+        constexpr char end_of_text = static_cast<char>(3);
+        m_FullText.append(&end_of_text);
+        m_Suffixes.push_back(suffix_start_index++);
 
         data_file.close();
 
         // create suffix array
-        const auto compair_suffixes = [&full_text = std::as_const(m_FullText)](const uint64_t a, const uint64_t b) {
-            return std::char_traits<char>::compare(&full_text[a], &full_text[b], full_text.size() - std::max(a, b)) < 0;
-        };
-
-        std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+        if (construct_naively) {
+            sort_suffixes_naive();
+        } else {
+            sort_suffixes_iteratively();
+        }
 
         // print stats
         std::cout << "Indexed " << m_FullText.size() << " characters" << std::endl;
@@ -112,8 +116,8 @@ namespace Sheet4 {
     }
 
     std::string SuffixArray::generate_preview(const std::vector<Article> &articles,
-                                                   const std::string &substring,
-                                                   const size_t max_article_count) const {
+                                              const std::string &substring,
+                                              const size_t max_article_count) const {
         std::string preview;
         for (int i = 0; i < std::min(articles.size(), max_article_count); ++i) {
             const auto &[start_index, end_index] = articles[i];
@@ -157,5 +161,81 @@ namespace Sheet4 {
         }
 
         return preview;
+    }
+
+    void SuffixArray::sort_suffixes_naive() {
+        const auto compair_suffixes = [&full_text = std::as_const(m_FullText)](const uint64_t a, const uint64_t b) {
+            return std::char_traits<char>::compare(&full_text[a], &full_text[b], full_text.size() - std::max(a, b)) < 0;
+        };
+
+        std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+    }
+
+    void SuffixArray::sort_suffixes_iteratively() {
+        std::vector<uint64_t> suffix_rank;
+        suffix_rank.resize(m_FullText.size());
+        std::fill(suffix_rank.begin(), suffix_rank.end(), 0);
+
+        std::vector<uint64_t> suffix_rank_update_buffer;
+        suffix_rank_update_buffer.resize(suffix_rank.size());
+
+        // sort suffixes based on the first character
+        {
+            const auto compair_suffixes = [&full_text = std::as_const(m_FullText)](const uint64_t a, const uint64_t b) {
+                return full_text[a] < full_text[b];
+            };
+            std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+
+            // initialize the rank based on the first character
+            uint64_t counter = 0;
+            suffix_rank[m_Suffixes[0]] = counter;
+            for (uint64_t j = 1; j < m_Suffixes.size(); ++j) {
+                if (m_FullText[m_Suffixes[j - 1]] == m_FullText[m_Suffixes[j]]) {
+                    suffix_rank[m_Suffixes[j]] = counter;
+                } else {
+                    suffix_rank[m_Suffixes[j]] = ++counter;
+                }
+            }
+        }
+
+        // for i=1..log(n) sort based on first 2^l characters
+        const auto iteration = std::ceil(std::log2(m_Suffixes.size()));
+        for (int i = 0; i < iteration; ++i) {
+            const auto half_length = 1 << i;
+
+            // sort suffixes based on first half of character and then second half
+            const auto compair_suffixes = [
+                        &suffixes = std::as_const(m_Suffixes),
+                        &ranks = std::as_const(suffix_rank),
+                        half_length
+                    ](const uint64_t a, const uint64_t b) {
+                // if first half (computed in previous iteration) is not equal then this dictates order
+                if (ranks[a] != ranks[b])
+                    return ranks[a] < ranks[b];
+
+                // else sort by second half order (also computed in previous interation because we work with suffixes)
+                return ranks[a + half_length] < ranks[b + half_length];
+            };
+            std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+
+            // update the rank based on the previous rank
+            uint64_t counter = 0;
+            suffix_rank_update_buffer[m_Suffixes[0]] = counter;
+#pragma omp parallel for
+            for (uint64_t j = 1; j < m_Suffixes.size(); ++j) {
+                if (suffix_rank[m_Suffixes[j - 1]] != suffix_rank[m_Suffixes[j]]) {
+                    suffix_rank_update_buffer[m_Suffixes[j]] = ++counter;
+                    continue;
+                }
+
+                if (suffix_rank[m_Suffixes[j - 1] + half_length] != suffix_rank[m_Suffixes[j] + half_length]) {
+                    suffix_rank_update_buffer[m_Suffixes[j]] = ++counter;
+                    continue;
+                }
+
+                suffix_rank_update_buffer[m_Suffixes[j]] = counter;
+            }
+            suffix_rank = suffix_rank_update_buffer;
+        }
     }
 } // Sheet4
