@@ -8,6 +8,7 @@
 #include <execution>
 #include <iostream>
 #include <set>
+#include <cmath>
 
 namespace Sheet4 {
     SuffixArray::SuffixArray(std::ifstream data_file, const uint32_t max_article_count, const bool construct_naively) {
