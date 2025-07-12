@@ -147,7 +147,7 @@ namespace Sheet4 {
             }
 
             if (prefix_end >= pre_face) {
-                preview.append(text.substr(0, std::max(substring.size(), prefix_end - 1))).append("...\n");
+                preview.append(text.substr(0, std::max(post_face, prefix_end - 1))).append("...\n");
             } else {
                 preview.append(text.substr(0, prefix_end))
                         .append("...")
