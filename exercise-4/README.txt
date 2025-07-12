@@ -19,7 +19,10 @@ Naive sorting method builds in 10 minutes without parallelization and in 2 minut
 While using ~9GB, which roughly aligns with my estimate of needing 13 bytes per character in the original text + 8 bytes per article.
 This would mean for the full dataset it would need around 80GB of RAM.
 
-Iterative sorting method takes way too long, probably a logic error on my part, because I see a lot of CPU idle time. .-.
+NOTE:
+Iterative sorting method takes way too long, probably a memory usage error on my part, because I see a lot of CPU idle time. .-.
+Benchmarking the different steps of the algorithm, it already needs a whole minute for the initial iteration where only the first character is compared.
+However testing it on only a few articles (10) as well as on my 'banana' test file it works...
 
 # Query
 For 'Stuttgart' the suffix array nicely out-performs the naive search with 1ms against 90-100ms.

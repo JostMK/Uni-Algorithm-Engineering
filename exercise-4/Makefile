@@ -9,7 +9,7 @@ exercise-4: main.o suffix.o
 main.o: main.cpp SuffixArray.h Stopwatch.h
 	g++ $(compile_flags) -c main.cpp -o main.o
 
-suffix.o: SuffixArray.cpp SuffixArray.h
+suffix.o: SuffixArray.cpp SuffixArray.h Stopwatch.h
 	g++ $(compile_flags) -c SuffixArray.cpp -o suffix.o
 
 clean:

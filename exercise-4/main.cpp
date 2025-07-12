@@ -45,13 +45,18 @@ int main(const int argc, char *argv[]) {
     }
 
     // compute suffix array with naive sorting
-
     auto sw_min = Stopwatch<std::chrono::minutes>::Start();
     const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, true);
-    const auto create_time = sw_min.Stop();
-    std::cout << "Created naive suffix array in " << create_time << " minutes." << std::endl;
+    auto create_time = sw_min.Stop();
+    std::cout << "Created naive sort suffix array in " << create_time << " minutes." << std::endl;
 
-    // compute suffix array with recursive sorting
+    // compute suffix array with iterative sorting
+    // TODO: fix and reenable
+    //std::ifstream input_stream_it(WIKI_FILE);
+    //sw_min.Restart();
+    //const Sheet4::SuffixArray suffix_array_it(std::move(input_stream_it), article_count, false);
+    //create_time = sw_min.Stop();
+    //std::cout << "Created iterative sort suffix array in " << create_time << " minutes." << std::endl;
 
     // allow querying articles
     std::cout << std::endl;

@@ -10,6 +10,8 @@
 #include <set>
 #include <cmath>
 
+#include "Stopwatch.h"
+
 namespace Sheet4 {
     SuffixArray::SuffixArray(std::ifstream data_file, const uint32_t max_article_count, const bool construct_naively) {
         if (max_article_count > 0)
@@ -201,6 +203,7 @@ namespace Sheet4 {
 
         // sort suffixes based on the first character
         {
+            auto sw_ms = Stopwatch<std::chrono::milliseconds>::Start();
             const auto compair_suffixes = [&full_text = std::as_const(m_FullText)](const uint64_t a, const uint64_t b) {
                 return full_text[a] < full_text[b];
             };
@@ -216,11 +219,15 @@ namespace Sheet4 {
                     suffix_rank[m_Suffixes[j]] = ++counter;
                 }
             }
+            const auto time = sw_ms.Stop();
+            std::cout << "[INFO] Setup iteration in " << time << "ms" << std::endl;
         }
 
         // for i=1..log(n) sort based on first 2^l characters
+        auto sw_ms = Stopwatch<std::chrono::milliseconds>::Start();
         const auto iteration = std::ceil(std::log2(m_Suffixes.size()));
         for (int i = 0; i < iteration; ++i) {
+            sw_ms.Restart();
             const auto half_length = 1 << i;
 
             // sort suffixes based on first half of character and then second half
@@ -237,6 +244,8 @@ namespace Sheet4 {
                 return ranks[a + half_length] < ranks[b + half_length];
             };
             std::sort(std::execution::par, m_Suffixes.begin(), m_Suffixes.end(), compair_suffixes);
+
+            const auto split = sw_ms.Split();
 
             // update the rank based on the previous rank
             uint64_t counter = 0;
@@ -256,6 +265,9 @@ namespace Sheet4 {
                 suffix_rank_update_buffer[m_Suffixes[j]] = counter;
             }
             suffix_rank = suffix_rank_update_buffer;
+
+            const auto time = sw_ms.Stop();
+            std::cout << "[INFO] Iteration " << i << ": half length: " << half_length << "  Split: " << split << "ms  Time: " << time << "ms" << std::endl;
         }
     }
 } // Sheet4
