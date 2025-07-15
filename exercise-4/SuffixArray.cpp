@@ -27,7 +27,6 @@ namespace Sheet4 {
 
                 m_FullText.append("\n");
                 m_Suffixes.push_back(suffix_start_index++);
-                m_SuffixToArticleMap.push_back(m_Articles.size());
 
                 if (m_Articles.size() >= max_article_count)
                     break;
@@ -41,13 +40,12 @@ namespace Sheet4 {
 
             for ([[maybe_unused]] char _c: line) {
                 m_Suffixes.push_back(suffix_start_index++);
-                m_SuffixToArticleMap.push_back(m_Articles.size());
             }
         }
         // add end-of-text special character that compares the lowest to all other characters
         constexpr char end_of_text = static_cast<char>(3);
         m_FullText.append(&end_of_text);
-        m_Suffixes.push_back(suffix_start_index++);
+        m_Suffixes.push_back(suffix_start_index);
 
         data_file.close();
 
@@ -76,7 +74,7 @@ namespace Sheet4 {
             if (comp == 0) {
                 lower_bound = index - 1;
                 upper_bound = index + 1;
-                articles.insert(m_SuffixToArticleMap[suffix]);
+                articles.insert(find_article_for_suffix(suffix));
                 break;
             }
 
@@ -94,7 +92,7 @@ namespace Sheet4 {
             if (comp != 0)
                 break;
 
-            articles.insert(m_SuffixToArticleMap[suffix]);
+            articles.insert(find_article_for_suffix(suffix));
             lower_bound--;
         }
 
@@ -104,7 +102,7 @@ namespace Sheet4 {
             if (comp != 0)
                 break;
 
-            articles.insert(m_SuffixToArticleMap[suffix]);
+            articles.insert(find_article_for_suffix(suffix));
             upper_bound--;
         }
 
@@ -123,7 +121,7 @@ namespace Sheet4 {
 
         auto pos = m_FullText.find(substring);
         while (pos != std::string::npos) {
-            articles.insert(m_SuffixToArticleMap[pos]);
+            articles.insert(find_article_for_suffix(pos));
             pos = m_FullText.find(substring, pos + 1);
         }
 
@@ -232,10 +230,9 @@ namespace Sheet4 {
 
             // sort suffixes based on first half of character and then second half
             const auto compair_suffixes = [
-                        &suffixes = std::as_const(m_Suffixes),
-                        &ranks = std::as_const(suffix_rank),
-                        half_length
-                    ](const uint64_t a, const uint64_t b) {
+                    &ranks = std::as_const(suffix_rank),
+                    half_length
+            ](const uint64_t a, const uint64_t b) {
                 // if first half (computed in previous iteration) is not equal then this dictates order
                 if (ranks[a] != ranks[b])
                     return ranks[a] < ranks[b];
@@ -250,7 +247,6 @@ namespace Sheet4 {
             // update the rank based on the previous rank
             uint64_t counter = 0;
             suffix_rank_update_buffer[m_Suffixes[0]] = counter;
-#pragma omp parallel for
             for (uint64_t j = 1; j < m_Suffixes.size(); ++j) {
                 if (suffix_rank[m_Suffixes[j - 1]] != suffix_rank[m_Suffixes[j]]) {
                     suffix_rank_update_buffer[m_Suffixes[j]] = ++counter;
@@ -267,7 +263,23 @@ namespace Sheet4 {
             suffix_rank = suffix_rank_update_buffer;
 
             const auto time = sw_ms.Stop();
-            std::cout << "[INFO] Iteration " << i << ": half length: " << half_length << "  Split: " << split << "ms  Time: " << time << "ms" << std::endl;
+            std::cout << "[INFO] Iteration " << i << ": half length: " << half_length << "  Sorting: " << split
+                      << "ms  Ranking: " << time << "ms  MaxRank:" << counter << std::endl;
+
+            if (counter == m_Suffixes.size() - 1)
+                break;
         }
+    }
+
+    uint32_t SuffixArray::find_article_for_suffix(uint64_t suffix) const {
+        const auto index = std::lower_bound(
+                m_Articles.begin(),
+                m_Articles.end(),
+                suffix,
+                [](const Article &article, uint64_t value) {
+                    return article.end_index < value;
+                });
+
+        return index - m_Articles.begin();
     }
 } // Sheet4

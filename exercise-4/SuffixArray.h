@@ -32,14 +32,14 @@ namespace Sheet4 {
         std::string m_FullText;
         /// Stores the index into m_FullText where the suffix begins
         std::vector<uint64_t> m_Suffixes; // needs to fit indices up to 6 billion
-        /// Stores the index into m_Articles where the suffix (beginning at the accessed index) belongs to
-        std::vector<uint32_t> m_SuffixToArticleMap; // needs to fit indices up to 4.3 million
 
         /// Stores the index of where the article begins and ends in m_FullText
         std::vector<Article> m_Articles;
 
         void sort_suffixes_naive();
         void sort_suffixes_iteratively();
+
+        uint32_t find_article_for_suffix(uint64_t suffix) const;
     };
 } // Sheet4
 
