@@ -51,3 +51,7 @@ add_executable(Exercise-4
         exercise-4/SuffixArray.cpp
         exercise-4/SuffixArray.h
 )
+
+add_executable(Exercise-4-util-trim-data
+        exercise-4/util-trim-wiki-file.cpp
+)
