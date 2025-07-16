@@ -49,15 +49,14 @@ namespace Sheet4 {
 
         data_file.close();
 
+        std::cout << "[INFO] Loaded " << m_FullText.size() << " characters" << std::endl;
+
         // create suffix array
         if (construct_naively) {
             sort_suffixes_naive();
         } else {
             sort_suffixes_iteratively();
         }
-
-        // print stats
-        std::cout << "Indexed " << m_FullText.size() << " characters" << std::endl;
     }
 
     std::vector<Article> SuffixArray::query(const std::string &substring) const {
@@ -230,9 +229,9 @@ namespace Sheet4 {
 
             // sort suffixes based on first half of character and then second half
             const auto compair_suffixes = [
-                    &ranks = std::as_const(suffix_rank),
-                    half_length
-            ](const uint64_t a, const uint64_t b) {
+                        &ranks = std::as_const(suffix_rank),
+                        half_length
+                    ](const uint64_t a, const uint64_t b) {
                 // if first half (computed in previous iteration) is not equal then this dictates order
                 if (ranks[a] != ranks[b])
                     return ranks[a] < ranks[b];
@@ -264,21 +263,21 @@ namespace Sheet4 {
 
             const auto time = sw_ms.Stop();
             std::cout << "[INFO] Iteration " << i << ": half length: " << half_length << "  Sorting: " << split
-                      << "ms  Ranking: " << time << "ms  MaxRank:" << counter << std::endl;
+                    << "ms  Ranking: " << time << "ms  MaxRank:" << counter << std::endl;
 
             if (counter == m_Suffixes.size() - 1)
                 break;
         }
     }
 
-    uint32_t SuffixArray::find_article_for_suffix(uint64_t suffix) const {
+    uint32_t SuffixArray::find_article_for_suffix(const uint64_t suffix) const {
         const auto index = std::lower_bound(
-                m_Articles.begin(),
-                m_Articles.end(),
-                suffix,
-                [](const Article &article, uint64_t value) {
-                    return article.end_index < value;
-                });
+            m_Articles.begin(),
+            m_Articles.end(),
+            suffix,
+            [](const Article &article, const uint64_t value) {
+                return article.end_index < value;
+            });
 
         return index - m_Articles.begin();
     }

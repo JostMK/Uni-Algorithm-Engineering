@@ -48,20 +48,21 @@ int main(const int argc, char *argv[]) {
     auto sw_min = Stopwatch<std::chrono::minutes>::Start();
     const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, true);
     auto create_time = sw_min.Stop();
-    std::cout << "Created naive sort suffix array in " << create_time << " minutes." << std::endl;
+    std::cout << "[BENCHMARK] Created naive sort suffix array in " << create_time << " minutes." << std::endl;
 
     // compute suffix array with iterative sorting
-    // TODO: fix and reenable
+    // NOTE: works but is **very** slow -> for 10k articles: 18s per iteration -> 3min total
+    // TODO: fix performance and re-enable
     //std::ifstream input_stream_it(WIKI_FILE);
     //sw_min.Restart();
-    //const Sheet4::SuffixArray suffix_array_it(std::move(input_stream_it), article_count, false);
+    //const Sheet4::SuffixArray suffix_array(std::move(input_stream_it), article_count, false);
     //create_time = sw_min.Stop();
     //std::cout << "Created iterative sort suffix array in " << create_time << " minutes." << std::endl;
 
     // allow querying articles
     std::cout << std::endl;
     std::cout << "[INFO] Type in substring to search for using the suffix array.\n";
-    std::cout << "[INFO] Type [ENTER] to exit." << std::endl;
+    std::cout << "[INFO] Type <ENTER> to exit." << std::endl;
     auto sw_ms = Stopwatch<std::chrono::milliseconds>::Start();
     while (true) {
         std::cout << "\n[INPUT] Search-string: " << std::endl;
@@ -72,22 +73,26 @@ int main(const int argc, char *argv[]) {
             break;
 
         sw_ms.Restart();
-        const auto articles = suffix_array.query(input);
-        const auto query_time = sw_ms.Stop();
-        std::cout << "Queried suffix array in " << query_time << " ms." << std::endl;
-
-        sw_ms.Restart();
         const auto naive_query_articles = suffix_array.naive_query(input);
         const auto naive_query_time = sw_ms.Stop();
-        std::cout << "Queried naive in " << naive_query_time << " ms." << std::endl;
+        std::cout << "[BENCHMARK] Queried naive in " << naive_query_time << " ms. (" << naive_query_articles.size() <<
+                " results)"
+                << std::endl;
+
+        sw_ms.Restart();
+        const auto articles = suffix_array.query(input);
+        const auto query_time = sw_ms.Stop();
+        std::cout << "[BENCHMARK] Queried suffix array in " << query_time << " ms. (" << articles.size() << " results)"
+                <<
+                std::endl;
 
         if (articles.empty()) {
-            std::cout << "\nNo articles found containing: '" << input << "'\n" << std::endl;
+            std::cout << "\n[INFO] No articles found containing: '" << input << "'\n" << std::endl;
             continue;
         }
 
-        const auto preview = suffix_array.generate_preview(naive_query_articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
-        std::cout << "\n" << preview << "\n" << std::endl;
+        const auto preview = suffix_array.generate_preview(articles, input, DEFAULT_ARTICLE_DISPLAY_COUNT);
+        std::cout << "\n[INFO] Results preview:\n" << preview << "\n" << std::endl;
     }
 
     return 0;
