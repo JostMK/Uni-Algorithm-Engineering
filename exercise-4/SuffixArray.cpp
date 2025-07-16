@@ -103,7 +103,7 @@ namespace Sheet4 {
                 break;
 
             articles.insert(find_article_for_suffix(suffix));
-            upper_bound--;
+            upper_bound++;
         }
 
         // create result vector
