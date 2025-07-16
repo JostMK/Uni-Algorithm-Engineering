@@ -45,10 +45,10 @@ int main(const int argc, char *argv[]) {
     }
 
     // compute suffix array with naive sorting
-    auto sw_min = Stopwatch<std::chrono::minutes>::Start();
+    auto sw_sec = Stopwatch<std::chrono::seconds>::Start();
     const Sheet4::SuffixArray suffix_array(std::move(input_stream), article_count, true);
-    auto create_time = sw_min.Stop();
-    std::cout << "[BENCHMARK] Created naive sort suffix array in " << create_time << " minutes." << std::endl;
+    auto create_time = sw_sec.Stop();
+    std::cout << "[BENCHMARK] Created naive sort suffix array in " << create_time << " seconds." << std::endl;
 
     // compute suffix array with iterative sorting
     // NOTE: works but is **very** slow -> for 10k articles: 18s per iteration -> 3min total
